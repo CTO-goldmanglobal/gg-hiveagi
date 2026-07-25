@@ -8,13 +8,13 @@ tags:
 human_label: 
 ---
 
-## 人類描述
+## Human Description
 
 
-## AI 分析
-<!-- LLM Wiki 將自動生成此部分 -->
+## AI Analysis
+<!-- LLM Wiki will auto-generate this section -->
 
-## 相關鏈接
+## Related Links
 - [[]]
 
 ---

@@ -39,33 +39,32 @@ class SafetyError(Exception):
 
 
 # Generator system prompt for vision（image-aware 版本，基於 prompts/generator_system.txt）
-VISION_SYSTEM_PROMPT = """你係一個「人類視角知識工程師」。
+VISION_SYSTEM_PROMPT = """You are a "human-perspective knowledge engineer".
 
-任務：根據參與者提供嘅一張 frame（來自佢嘅第一身視角 video）同佢嘅簡短描述，
-推測並寫出一篇標準化嘅 Markdown 筆記。
+Task: Based on a single frame provided by the participant (taken from their first-person-perspective video) and their brief description, infer and write out a standardized Markdown note.
 
-⚠️ 重要規則：
-- 圖片已經過 PII blur（人臉 + 車牌已模糊化）。唔好嘗試辨識任何模糊區域。
-- 唔好憑空創作事實。如果圖片或描述冇提供嘅資訊，留空或標明「不詳」。
-- 唔好提及任何可辨識嘅個人（即使圖片未blur到）。
+⚠️ Important rules:
+- The image has already been PII-blurred (faces and license plates have been blurred out). Do not attempt to identify any blurred regions.
+- Do not fabricate facts. If the image or description provides no information, leave it blank or mark it as "unknown".
+- Do not mention any identifiable individual (even if the image was not fully blurred).
 
-輸出必須為 JSON，包含：
+The output must be JSON containing:
 {
   "frontmatter": {
-    "timestamp": "<會由 caller 填，你填 placeholder>",
-    "gps_lat": <float 或 null>,
-    "gps_lng": <float 或 null>,
-    "trigger_type": "<從圖片推測：aesthetic_gaze / anomaly_detection / professional_judgment / manual / other>",
-    "domain": "<從圖片推測：tourism / legal / medical / industrial / education / other>",
-    "tags": "<逗號分隔標籤>",
-    "human_label": "<參與者提供，或空>"
+    "timestamp": "<filled in by the caller; you fill in a placeholder>",
+    "gps_lat": <float or null>,
+    "gps_lng": <float or null>,
+    "trigger_type": "<inferred from the image: aesthetic_gaze / anomaly_detection / professional_judgment / manual / other>",
+    "domain": "<inferred from the image: tourism / legal / medical / industrial / education / other>",
+    "tags": "<comma-separated tags>",
+    "human_label": "<provided by the participant, or empty>"
   },
-  "body_human_description": "<保留參與者原文>",
-  "body_ai_analysis": "<根據圖片 + 描述推測場景、情感、專業判斷，200-300字>",
+  "body_human_description": "<preserve the participant's original text>",
+  "body_ai_analysis": "<infer the scene, emotion, and professional judgment from the image + description, 200-300 words>",
   "body_related_links": ["[[wikilink_1]]", "[[wikilink_2]]"]
 }
 
-語言：跟隨參與者描述嘅語言（粵語/英文/普通話）。
+Language: Write your response in the SAME language as the participant's human_description input (Cantonese / English / Mandarin). English is the default skeleton when the input gives no language signal.
 """
 
 
@@ -99,8 +98,8 @@ def _blur_frame(frame_path: Path, work_dir: Path) -> Path:
         from anonymize import anonymize_image, SafetyError as AnonSafetyError
     except ImportError as e:
         raise SafetyError(
-            f"PII anonymize module 載唔到：{e}。"
-            "裝 deps：pip install -r tools/pii_anonymizer/requirements.txt"
+            f"Failed to load PII anonymize module: {e}."
+            "Install deps: pip install -r tools/pii_anonymizer/requirements.txt"
         ) from e
 
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -114,7 +113,7 @@ def _blur_frame(frame_path: Path, work_dir: Path) -> Path:
     except AnonSafetyError as e:
         raise SafetyError(str(e)) from e
     except Exception as e:
-        raise SafetyError(f"blur 意外失敗：{e}") from e
+        raise SafetyError(f"blur failed unexpectedly: {e}") from e
 
 
 def _call_minimax_vision(
@@ -171,7 +170,7 @@ def _call_minimax_vision(
 
     parsed = extract_json(content)
     if parsed is None:
-        raise ValueError(f"MiniMax vision 返回無效 JSON：{content[:200]}")
+        raise ValueError(f"MiniMax vision returned invalid JSON: {content[:200]}")
     return parsed
 
 
@@ -212,7 +211,7 @@ def process_frame(
 
     frame = Path(frame_path)
     if not frame.exists():
-        raise FileNotFoundError(f"Frame 唔存在：{frame}")
+        raise FileNotFoundError(f"Frame does not exist: {frame}")
 
     if work_dir is None:
         work_dir = frame.parent / "_anon"
@@ -222,13 +221,13 @@ def process_frame(
     # 冇 try/except bypass。blur 失敗 → raise SafetyError → caller 必須處理。
     blurred = _blur_frame(frame, work_dir)
     if not blurred.exists():
-        raise SafetyError(f"blur 聲稱成功但 output 唔存在：{blurred}")
+        raise SafetyError(f"blur reported success but output does not exist: {blurred}")
 
     # 編碼 + call
     image_uri, _ = _encode_image_b64(blurred)
     hint = location_hint
     if participant_description:
-        hint = f"{location_hint} | 描述：{participant_description}"
+        hint = f"{location_hint} | description: {participant_description}"
 
     raw_dict = _call_minimax_vision(config, image_uri, hint)
 
@@ -255,7 +254,7 @@ def process_frame(
     try:
         raw = RawData(**raw_payload)
     except ValidationError as e:
-        raise ValueError(f"Vision output 唔符合 RawData schema：{e}") from e
+        raise ValueError(f"Vision output does not match RawData schema: {e}") from e
 
     # 將 ai_analysis / related_links attach 去 raw 嘅 extra（model_config extra=ignore 會丟）
     # 所以 caller 要自己處理 —— 我哋將完整 result 放喺 raw._vision_extra

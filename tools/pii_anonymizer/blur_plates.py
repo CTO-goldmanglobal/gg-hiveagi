@@ -45,7 +45,7 @@ class PlateBlur:
             fill_ratio_min: 候選區內 edge 密度下限（用嚟過濾平滑背景）
         """
         if blur_strength % 2 == 0:
-            raise ValueError("blur_strength 必須係奇數")
+            raise ValueError("blur_strength must be odd")
         self.blur_strength = blur_strength
         self.min_area = min_area
         self.fill_ratio_min = fill_ratio_min
@@ -64,7 +64,7 @@ class PlateBlur:
 
         image = cv2.imread(str(image_path))
         if image is None:
-            raise FileNotFoundError(f"讀唔到圖片：{image_path}")
+            raise FileNotFoundError(f"Cannot read image: {image_path}")
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         # 保邊降噪（車牌字元邊緤要保留）
@@ -117,7 +117,7 @@ class PlateBlur:
 
         image = cv2.imread(str(input_path))
         if image is None:
-            raise FileNotFoundError(f"讀唔到圖片：{input_path}")
+            raise FileNotFoundError(f"Cannot read image: {input_path}")
 
         for box in boxes:
             x, y, w, h = box["x"], box["y"], box["w"], box["h"]
@@ -136,23 +136,23 @@ class PlateBlur:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="車牌模糊化（OpenCV HAAR）")
-    parser.add_argument("input", help="輸入圖片路徑")
-    parser.add_argument("--out", help="輸出路徑")
+    parser = argparse.ArgumentParser(description="License plate blur (OpenCV HAAR)")
+    parser.add_argument("input", help="Input image path")
+    parser.add_argument("--out", help="Output path")
     parser.add_argument("--strength", type=int, default=71,
-                        help="Gaussian blur kernel（奇數，預設 71）")
+                        help="Gaussian blur kernel (odd, default 71)")
     parser.add_argument("--report-only", action="store_true",
-                        help="只偵測車牌數量，唔寫檔")
+                        help="Detect plate count only, do not write file")
     args = parser.parse_args()
 
     pb = PlateBlur(blur_strength=args.strength)
     out, count = pb.process_file(args.input, args.out, report_only=args.report_only)
     if args.report_only:
-        print(f"🚗 偵測到 {count} 個車牌（只偵測）")
+        print(f"🚗 Detected {count} plate(s) (report only)")
         if count == 0:
-            print("   （可能漏檢。AU 車牌同訓練數據有差異 —— 請人手 review）")
+            print("   (May have missed plates. AU plates differ from training data — please review manually)")
     else:
-        print(f"✅ 模糊咗 {count} 個車牌 → {out}")
+        print(f"✅ Blurred {count} plate(s) → {out}")
     return 0
 
 

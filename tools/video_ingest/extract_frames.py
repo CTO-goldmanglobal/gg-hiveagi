@@ -63,7 +63,7 @@ def extract_at(video_path: Path, timestamps: list, out_dir: Path,
             if out_file.exists():
                 written.append(out_file)
         except subprocess.CalledProcessError as e:
-            print(f"⚠️  抽 {ts} 失敗：{e}", file=sys.stderr)
+            print(f"⚠️  Failed to extract {ts}: {e}", file=sys.stderr)
     return written
 
 
@@ -75,7 +75,7 @@ def extract_every(video_path: Path, interval_sec: int, out_dir: Path,
     out_dir.mkdir(parents=True, exist_ok=True)
     duration = video_duration(video_path)
     if duration <= 0:
-        print("⚠️  攞唔到 video 時長，fallback 用 1 fps 抽（可能唔準）", file=sys.stderr)
+        print("⚠️  Could not get video duration, falling back to 1 fps extraction (may be inaccurate)", file=sys.stderr)
         # fallback：fps filter
         cmd = [
             "ffmpeg", "-y", "-i", str(video_path),
@@ -104,26 +104,26 @@ def _format_timestamp(seconds: float) -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="用 ffmpeg 抽 video frame")
-    parser.add_argument("video", help="輸入 video 路徑")
+    parser = argparse.ArgumentParser(description="Extract video frames with ffmpeg")
+    parser.add_argument("video", help="Input video path")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--every", type=int, metavar="Ns",
-                      help="每 N 秒抽一 frame")
+                      help="Extract one frame every N seconds")
     group.add_argument("--at", metavar="HH:MM:SS[,HH:MM:SS,...]",
-                      help="喺指定時間點抽（逗號分隔）")
+                      help="Extract at the given timepoints (comma-separated)")
     parser.add_argument("--out", default="./frames",
-                        help="輸出目錄（預設 ./frames）")
+                        help="Output directory (default ./frames)")
     parser.add_argument("--quality", type=int, default=2,
-                        help="JPEG 質素 2–31，細 = 高質（預設 2）")
+                        help="JPEG quality 2–31, lower = higher quality (default 2)")
     args = parser.parse_args()
 
     if not ffmpeg_available():
-        print("❌ ffmpeg 未安裝。macOS：brew install ffmpeg", file=sys.stderr)
+        print("❌ ffmpeg is not installed. On macOS: brew install ffmpeg", file=sys.stderr)
         return 1
 
     video = Path(args.video)
     if not video.exists():
-        print(f"❌ video 唔存在：{video}", file=sys.stderr)
+        print(f"❌ video does not exist: {video}", file=sys.stderr)
         return 1
 
     out_dir = Path(args.out)
@@ -134,11 +134,11 @@ def main():
         ts_list = [t.strip() for t in args.at.split(",") if t.strip()]
         written = extract_at(video, ts_list, out_dir, args.quality)
 
-    print(f"✅ 抽咗 {len(written)} 個 frame → {out_dir}/")
+    print(f"✅ Extracted {len(written)} frame(s) → {out_dir}/")
     for f in written[:5]:
         print(f"   {f.name}")
     if len(written) > 5:
-        print(f"   ... 同埋另外 {len(written) - 5} 個")
+        print(f"   ... and {len(written) - 5} more")
     return 0
 
 

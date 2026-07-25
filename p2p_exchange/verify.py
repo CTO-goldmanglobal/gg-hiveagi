@@ -39,7 +39,7 @@ def verify_package(package_dir: Path, expected_cid: str) -> VerifyResult:
     if looks_like_mock_cid(expected_cid):
         actual = compute_mock_cid(files)
         ok = (actual == expected_cid)
-        note = "" if ok else "內容同 CID 不符 —— 可能俾人改過 / 損壞"
+        note = "" if ok else "Content does not match the CID — may have been altered / corrupted"
         return VerifyResult(ok, expected_cid, actual, note)
 
     # 非 mock CID（真 kubo CID）—— 本地 recompute 唔適用
@@ -49,7 +49,7 @@ def verify_package(package_dir: Path, expected_cid: str) -> VerifyResult:
         expected_cid=expected_cid,
         actual_cid="<kubo-cid:recompute-not-supported>",
         note=(
-            "真 kubo CID 唔能喺本地 recompute（要 ipfs daemon）。"
-            "用 `ipfs cat <CID> | sha256sum` 自行核對原始 bytes。"
+            "A real kubo CID cannot be recomputed locally (requires ipfs daemon)."
+            "Use `ipfs cat <CID> | sha256sum` to verify the raw bytes yourself."
         ),
     )

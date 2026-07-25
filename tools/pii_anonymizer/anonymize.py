@@ -41,7 +41,7 @@ def anonymize_image(input_path: str,
     """
     in_path = Path(input_path)
     if not in_path.exists():
-        raise SafetyError(f"圖片唔存在：{input_path}")
+        raise SafetyError(f"Image does not exist: {input_path}")
 
     if output_path is None:
         output_path = str(in_path.parent / f"{in_path.stem}_anon{in_path.suffix}")
@@ -60,11 +60,11 @@ def anonymize_image(input_path: str,
         summary["faces_blurred"] = face_count
     except ImportError as e:
         raise SafetyError(
-            f"MediaPipe 未安裝 —— 唔可以做人臉 blur → 拒絕送 LLM。"
-            f"裝佢：pip install -r tools/pii_anonymizer/requirements.txt （{e}）"
+            f"MediaPipe is not installed — cannot blur faces → refusing to send to LLM."
+            f"Install it: pip install -r tools/pii_anonymizer/requirements.txt ({e})"
         ) from e
     except Exception as e:
-        raise SafetyError(f"人臉 blur 失敗：{e}") from e
+        raise SafetyError(f"Face blur failed: {e}") from e
 
     # 2. Plate blur（串聯喺已 blur face 嘅檔上）
     try:
@@ -74,19 +74,19 @@ def anonymize_image(input_path: str,
         summary["plates_blurred"] = plate_count
     except ImportError as e:
         raise SafetyError(
-            f"OpenCV 未安裝 —— 唔可以做車牌 blur → 拒絕送 LLM。"
-            f"裝佢：pip install -r tools/pii_anonymizer/requirements.txt （{e}）"
+            f"OpenCV is not installed — cannot blur plates → refusing to send to LLM."
+            f"Install it: pip install -r tools/pii_anonymizer/requirements.txt ({e})"
         ) from e
     except Exception as e:
-        # plate cascade 載唔到都算 safety fail（雖然次要）
-        raise SafetyError(f"車牌 blur 失敗：{e}") from e
+        # plate cascade 載唔到也算 safety fail（雖然次要）
+        raise SafetyError(f"Plate blur failed: {e}") from e
 
     return output_path, summary
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("用法: python anonymize.py <image> [--out <output>]")
+        print("Usage: python anonymize.py <image> [--out <output>]")
         sys.exit(1)
     inp = sys.argv[1]
     out = None
@@ -95,8 +95,8 @@ if __name__ == "__main__":
     try:
         result, summary = anonymize_image(inp, out)
         print(f"✅ Anonymized → {result}")
-        print(f"   人臉模糊: {summary['faces_blurred']}")
-        print(f"   車牌模糊: {summary['plates_blurred']}")
+        print(f"   Faces blurred: {summary['faces_blurred']}")
+        print(f"   Plates blurred: {summary['plates_blurred']}")
     except SafetyError as e:
-        print(f"❌ Safety gate 失敗：{e}", file=sys.stderr)
+        print(f"❌ Safety gate failed: {e}", file=sys.stderr)
         sys.exit(1)

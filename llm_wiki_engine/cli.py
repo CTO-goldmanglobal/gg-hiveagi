@@ -27,7 +27,7 @@ def cmd_process(args) -> int:
     quarantine_path = Path(args.quarantine)
 
     if not inbox_path.exists():
-        print(f"❌ Inbox 目錄不存在: {inbox_path}", file=sys.stderr)
+        print(f"❌ Inbox directory does not exist: {inbox_path}", file=sys.stderr)
         return 1
 
     entries_path.mkdir(parents=True, exist_ok=True)
@@ -35,11 +35,11 @@ def cmd_process(args) -> int:
 
     json_files = sorted(inbox_path.glob("*.json"))
     if not json_files:
-        print(f"⚠️  Inbox 入面冇 JSON 檔案: {inbox_path}")
+        print(f"⚠️  No JSON files in Inbox: {inbox_path}")
         return 0
 
     engine = _build_engine(args)
-    print(f"📂 搵到 {len(json_files)} 個 JSON，開始處理 ...")
+    print(f"📂 Found {len(json_files)} JSON file(s), starting processing ...")
 
     ok_count, fail_count = 0, 0
     for json_file in json_files:
@@ -48,7 +48,7 @@ def cmd_process(args) -> int:
             raw_data = json.loads(json_file.read_text(encoding="utf-8"))
             raw = RawData(**raw_data)
         except (json.JSONDecodeError, ValidationError) as e:
-            print(f"    ❌ Raw Data 無效: {e}")
+            print(f"    ❌ Invalid Raw Data: {e}")
             fail_count += 1
             continue
 
@@ -57,12 +57,12 @@ def cmd_process(args) -> int:
             out = entries_path / _entry_filename(result)
             out.write_text(result.to_markdown(), encoding="utf-8")
             tag = " (corrected)" if result.audited_corrected else ""
-            print(f"    ✅ 寫入 {out.name}{tag}")
+            print(f"    ✅ Written {out.name}{tag}")
             ok_count += 1
         else:
             fail_count += 1
 
-    print(f"\n✅ 完成：{ok_count} 入庫，{fail_count} quarantine/失敗")
+    print(f"\n✅ Done: {ok_count} committed, {fail_count} quarantine/failed")
     return 0
 
 
@@ -72,14 +72,14 @@ def cmd_process_one(args) -> int:
     quarantine_path = Path(args.quarantine)
 
     if not input_path.exists():
-        print(f"❌ 輸入檔案不存在: {input_path}", file=sys.stderr)
+        print(f"❌ Input file does not exist: {input_path}", file=sys.stderr)
         return 1
 
     try:
         raw_data = json.loads(input_path.read_text(encoding="utf-8"))
         raw = RawData(**raw_data)
     except (json.JSONDecodeError, ValidationError) as e:
-        print(f"❌ Raw Data 無效: {e}", file=sys.stderr)
+        print(f"❌ Invalid Raw Data: {e}", file=sys.stderr)
         return 1
 
     quarantine_path.mkdir(parents=True, exist_ok=True)
@@ -90,10 +90,10 @@ def cmd_process_one(args) -> int:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(result.to_markdown(), encoding="utf-8")
         tag = " (corrected)" if result.audited_corrected else ""
-        print(f"✅ 寫入 {output_path}{tag}")
+        print(f"✅ Written {output_path}{tag}")
         return 0
     else:
-        print("❌ 處理失敗，已放入 quarantine", file=sys.stderr)
+        print("❌ Processing failed, moved to quarantine", file=sys.stderr)
         return 1
 
 
@@ -123,7 +123,7 @@ def cmd_process_video(args) -> int:
     inbox_dir.mkdir(parents=True, exist_ok=True)
 
     if not frames_dir.is_dir():
-        print(f"❌ frames 目錄唔存在：{frames_dir}", file=sys.stderr)
+        print(f"❌ frames directory does not exist: {frames_dir}", file=sys.stderr)
         return 1
 
     config = load_config(mock_mode=False)  # vision 一定要 real mode
@@ -133,10 +133,10 @@ def cmd_process_video(args) -> int:
         if p.is_file() and p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")
     )
     if not frame_files:
-        print(f"⚠️  {frames_dir} 入面冇圖片", file=sys.stderr)
+        print(f"⚠️  No images in {frames_dir}", file=sys.stderr)
         return 1
 
-    print(f"🔎 Vision processing {len(frame_files)} 個 frame ...")
+    print(f"🔎 Vision processing {len(frame_files)} frame(s) ...")
     ok, fail = 0, 0
     for i, frame in enumerate(frame_files, 1):
         print(f"  [{i}/{len(frame_files)}] {frame.name}")
@@ -167,48 +167,48 @@ def cmd_process_video(args) -> int:
             print(f"      ❌ {type(e).__name__}: {e}")
             fail += 1
 
-    print(f"\n✅ Vision done: {ok} 成功, {fail} 失敗")
-    print(f"下一步：python -m llm_wiki_engine process --inbox {inbox_dir} --entries ...")
+    print(f"\n✅ Vision done: {ok} succeeded, {fail} failed")
+    print(f"Next step: python -m llm_wiki_engine process --inbox {inbox_dir} --entries ...")
     return 0 if fail == 0 else 1
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="llm_wiki_engine",
-        description="LLM Wiki Engine — 將 Raw Data 轉為結構化 Wiki Entry",
+        description="LLM Wiki Engine — convert Raw Data into structured Wiki Entries",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # preflight
     p_pre = subparsers.add_parser(
-        "preflight", help="檢查 real-mode 依賴（env keys / kubo / MiniMax / DeepSeek）"
+        "preflight", help="Check real-mode dependencies (env keys / kubo / MiniMax / DeepSeek)"
     )
     p_pre.add_argument(
         "--quick", action="store_true",
-        help="淨係檢查 env + daemon，唔打真 API",
+        help="Only check env + daemon, do not hit the real API",
     )
     p_pre.set_defaults(func=lambda a: _run_preflight(a))
 
     # process
-    p_proc = subparsers.add_parser("process", help="批量處理 Inbox 目錄")
-    p_proc.add_argument("--inbox", required=True, help="Inbox 目錄（存放 Raw Data JSON）")
-    p_proc.add_argument("--entries", required=True, help="輸出 Entries 目錄")
-    p_proc.add_argument("--quarantine", default="./quarantine", help="Quarantine 目錄")
-    p_proc.add_argument("--mock", action="store_true", help="Mock 模式（唔使 API key）")
+    p_proc = subparsers.add_parser("process", help="Batch process an Inbox directory")
+    p_proc.add_argument("--inbox", required=True, help="Inbox directory (holding Raw Data JSON)")
+    p_proc.add_argument("--entries", required=True, help="Output Entries directory")
+    p_proc.add_argument("--quarantine", default="./quarantine", help="Quarantine directory")
+    p_proc.add_argument("--mock", action="store_true", help="Mock mode (no API key needed)")
     p_proc.add_argument(
         "--audit-fail-mode",
         choices=["pass", "corrected", "quarantine"],
         default=None,
-        help="Mock 模式強制 audit 結果（測試分支用）",
+        help="Mock mode forces the audit result (for testing branches)",
     )
     p_proc.set_defaults(func=cmd_process)
 
     # process-one
-    p_one = subparsers.add_parser("process-one", help="處理單一 JSON 檔案")
-    p_one.add_argument("--input", required=True, help="輸入 JSON 檔案")
-    p_one.add_argument("--output", required=True, help="輸出 .md 檔案")
-    p_one.add_argument("--quarantine", default="./quarantine", help="Quarantine 目錄")
-    p_one.add_argument("--mock", action="store_true", help="Mock 模式")
+    p_one = subparsers.add_parser("process-one", help="Process a single JSON file")
+    p_one.add_argument("--input", required=True, help="Input JSON file")
+    p_one.add_argument("--output", required=True, help="Output .md file")
+    p_one.add_argument("--quarantine", default="./quarantine", help="Quarantine directory")
+    p_one.add_argument("--mock", action="store_true", help="Mock mode")
     p_one.add_argument(
         "--audit-fail-mode",
         choices=["pass", "corrected", "quarantine"],
@@ -219,11 +219,11 @@ def main(argv=None) -> int:
     # process-video (Path 2: auto-vision with enforced PII blur)
     p_vid = subparsers.add_parser(
         "process-video",
-        help="Auto-vision: frames → blur → MiniMax M3 → RawData JSON（需 real mode + PII deps）"
+        help="Auto-vision: frames → blur → MiniMax M3 → RawData JSON (requires real mode + PII deps)"
     )
-    p_vid.add_argument("--frames", required=True, help="Frame 圖片目錄")
-    p_vid.add_argument("--inbox", required=True, help="RawData JSON 輸出目錄")
-    p_vid.add_argument("--location", default="", help="地點提示（例如 Sydney Harbour）")
+    p_vid.add_argument("--frames", required=True, help="Frame image directory")
+    p_vid.add_argument("--inbox", required=True, help="RawData JSON output directory")
+    p_vid.add_argument("--location", default="", help="Location hint (e.g. Sydney Harbour)")
     p_vid.set_defaults(func=cmd_process_video)
 
     args = parser.parse_args(argv)

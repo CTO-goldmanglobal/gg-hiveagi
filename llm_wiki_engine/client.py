@@ -112,7 +112,7 @@ class MockLLMClient(LLMClient):
         timestamp = data.get("timestamp", "2026-07-25T19:30:00Z")
         trigger_type = data.get("trigger_type", "aesthetic_gaze")
         domain = data.get("domain", "tourism")
-        tags = data.get("tags", ["日落", "貨櫃碼頭"])
+        tags = data.get("tags", ["sunset", "container-terminal"])
         if isinstance(tags, list):
             tags = ", ".join(tags)
         human_label = data.get("human_label", "") or ""
@@ -120,7 +120,7 @@ class MockLLMClient(LLMClient):
 
         # 模擬「如果 human_label = 靚 → 加 #aesthetic」（spec §4 規則）
         extra_tags = []
-        if human_label == "靚":
+        if human_label == "beautiful":
             extra_tags.append("aesthetic")
         all_tags = tags + (", " + ", ".join(f"#{t}" for t in extra_tags) if extra_tags else "")
 
@@ -136,10 +136,10 @@ class MockLLMClient(LLMClient):
             },
             "body_human_description": human_desc,
             "body_ai_analysis": (
-                f"[Mock MiniMax 分析] {human_desc} "
-                "呢個觸發展現咗人類視角下嘅獨特觀察，值得記錄同連結到更廣嘅知識網絡。"
+                f"[Mock MiniMax analysis] {human_desc} "
+                "This trigger reveals a unique observation from the human perspective, worth recording and linking into the broader knowledge network."
             ),
-            "body_related_links": ["[[悉尼港口]]", "[[工業美學]]"],
+            "body_related_links": ["[[Sydney Harbour]]", "[[industrial aesthetics]]"],
         }, ensure_ascii=False)
 
     def _mock_auditor_response(self, user_prompt: str) -> str:
@@ -150,7 +150,7 @@ class MockLLMClient(LLMClient):
 
         if self.audit_fail_mode == "corrected":
             verdict = "fail"
-            issues = ["tags 唔夠齊全，缺 '悉尼' 標籤"]
+            issues = ["tags incomplete, missing 'Sydney' tag"]
             try:
                 raw = json.loads(user_prompt)
                 draft_fm = raw.get("draft", {}).get("frontmatter", {})
@@ -163,16 +163,16 @@ class MockLLMClient(LLMClient):
                     "gps_lng": draft_fm.get("gps_lng", 151.2153),
                     "trigger_type": draft_fm.get("trigger_type", "aesthetic_gaze"),
                     "domain": draft_fm.get("domain", "tourism"),
-                    "tags": (draft_fm.get("tags", "") + ", 悉尼").lstrip(", "),
-                    "human_label": draft_fm.get("human_label", "靚"),
+                    "tags": (draft_fm.get("tags", "") + ", Sydney").lstrip(", "),
+                    "human_label": draft_fm.get("human_label", "beautiful"),
                 },
                 "body_human_description": raw.get("draft", {}).get("body_human_description", ""),
-                "body_ai_analysis": "[Auditor 修正] 增加 '悉尼' 地理標籤以提升可檢索性。",
-                "body_related_links": ["[[悉尼港口]]", "[[工業美學]]"],
+                "body_ai_analysis": "[Auditor correction] added 'Sydney' geo-tag to improve retrievability.",
+                "body_related_links": ["[[Sydney Harbour]]", "[[industrial aesthetics]]"],
             }
         elif self.audit_fail_mode == "quarantine":
             verdict = "fail"
-            issues = ["內容嚴重偏離主題", "無法自動修正"]
+            issues = ["content severely off-topic", "cannot auto-correct"]
 
         return json.dumps({
             "verdict": verdict,

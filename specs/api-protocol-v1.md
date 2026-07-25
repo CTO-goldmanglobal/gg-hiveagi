@@ -1,55 +1,55 @@
 # LLM Wiki Engine API Protocol v1.0
 
-## 1. 概述
+## 1. Overview
 
-呢份文件定義 **P1 LLM Wiki Engine** 嘅 API 設計。P0 階段唔需要 LLM，但 spec 預先寫定，確保未來整合順暢。
+This document defines the API design for the **P1 LLM Wiki Engine**. The P0 phase does not require an LLM, but the spec is written in advance to ensure smooth future integration.
 
-**核心決策**：
-- ✅ API-based（唔用 local Llama 3.2）
-- ✅ **Dual-LLM 架構**：一個 generator + 一個 auditor，生成同審查分離
-- ✅ 兩個 provider 都係 OpenAI-compatible，可用同一個 SDK（淨係換 base_url）
-- ✅ PII Stripping 喺 API 之前完成
+**Core decisions**:
+- ✅ API-based (local Llama 3.2 is not used)
+- ✅ **Dual-LLM architecture**: one generator + one auditor, separating generation from review
+- ✅ Both providers are OpenAI-compatible, so the same SDK can be used (just swap the `base_url`)
+- ✅ PII Stripping is completed before the API call
 
 ---
 
-## 2. Dual-LLM 架構
+## 2. Dual-LLM Architecture
 
 ```
-            Raw Data (已 strip PII)
+            Raw Data (PII stripped)
                     │
                     ▼
         ┌────────────────────────┐
-        │  Generator: MiniMax M3 │   ← 主力生成 wiki entry
-        │  model: MiniMax-M3     │      （食 token plan，主預算）
+        │  Generator: MiniMax M3 │   ← Primary generator of wiki entries
+        │  model: MiniMax-M3     │      (consumes the token plan, main budget)
         └────────────────────────┘
                     │ draft entry (JSON)
                     ▼
         ┌────────────────────────┐
-        │  Auditor: DeepSeek V4  │   ← 審查 draft
-        │           Flash        │      （平 + 快，校驗用）
+        │  Auditor: DeepSeek V4  │   ← Reviews the draft
+        │           Flash        │      (cheap + fast, used for validation)
         │  model: deepseek-v4-   │
         │         flash          │
         └────────────────────────┘
-                    │ pass → 直接入庫
-                    │ fail + corrected → 自動修正後入庫
-                    │ fail 無 corrected → 重試 / quarantine
+                    │ pass → write directly to the store
+                    │ fail + corrected → auto-corrected, then written
+                    │ fail without corrected → retry / quarantine
                     ▼
-              Final Entry (寫入 /01_Entries/)
+              Final Entry (written to /01_Entries/)
 ```
 
-| 角色 | Provider | Model 名 | 用途 | 點解揀佢 |
+| Role | Provider | Model Name | Purpose | Why It Was Chosen |
 | :--- | :--- | :--- | :--- | :--- |
-| **Generator** | MiniMax | `MiniMax-M3` | 將 Raw Data 轉為標準化 wiki entry（人類描述 + AI 分析 + 雙向鏈接） | 多模態推理強、coding/agent 導向、1M context |
-| **Auditor** | DeepSeek | `deepseek-v4-flash` | 審查 generator 產出：hallucination、schema 合規、情感偏差 | MoE 13B activated、快、平、適合高頻校驗 |
+| **Generator** | MiniMax | `MiniMax-M3` | Convert Raw Data into standardized wiki entries (human description + AI analysis + bidirectional links) | Strong multimodal reasoning, coding/agent oriented, 1M context |
+| **Auditor** | DeepSeek | `deepseek-v4-flash` | Review generator output: hallucination, schema compliance, sentiment bias | MoE 13B activated, fast, cheap, suitable for high-frequency validation |
 
-> ⚠️ **重要**：DeepSeek 旧名 `deepseek-chat` / `deepseek-reasoner` 已喺 **2026-07-24 正式 deprecate**。
-> 必須用新名 `deepseek-v4-flash`（或 `deepseek-v4-pro`）。
+> ⚠️ **Important**: The old DeepSeek names `deepseek-chat` / `deepseek-reasoner` were **officially deprecated on 2026-07-24**.
+> You must use the new names `deepseek-v4-flash` (or `deepseek-v4-pro`).
 
 ---
 
-## 3. Provider 配置
+## 3. Provider Configuration
 
-兩者都用 OpenAI SDK，只係換 `base_url` 同 `api_key`：
+Both use the OpenAI SDK; only the `base_url` and `api_key` are swapped:
 
 ### Generator (MiniMax M3)
 
@@ -58,40 +58,40 @@ from openai import OpenAI
 import os
 
 generator = OpenAI(
-    api_key=os.environ["MINIMAX_API_KEY"],     # 由 MiniMax platform 拎
-    base_url="https://api.minimax.io/v1",       # 確認 2026-06
+    api_key=os.environ["MINIMAX_API_KEY"],     # Obtain from the MiniMax platform
+    base_url="https://api.minimax.io/v1",       # Confirmed 2026-06
 )
 # model = "MiniMax-M3"
-# GroupId（MINIMAX_GROUP_ID）：喺 platform 註冊帳號時拎到，
-#   某啲 legacy / management endpoint 會用到；chat/completions 唔一定要傳。
-#   仍屬帳號識別碼 → 放 .env，唔好 commit。
+# GroupId (MINIMAX_GROUP_ID): obtained when registering an account on the platform;
+#   it is used by certain legacy / management endpoints; it is not required for chat/completions.
+#   It is still an account identifier → put it in .env, do not commit.
 ```
 
 ### Auditor (DeepSeek V4 Flash)
 
 ```python
 auditor = OpenAI(
-    api_key=os.environ["DEEPSEEK_API_KEY"],    # 由 DeepSeek platform 拎
-    base_url="https://api.deepseek.com/v1",     # 確認 2026-06
+    api_key=os.environ["DEEPSEEK_API_KEY"],    # Obtain from the DeepSeek platform
+    base_url="https://api.deepseek.com/v1",     # Confirmed 2026-06
 )
 # model = "deepseek-v4-flash"
 ```
 
-**Credentials 管理**：全部放 `.env`，唔好入 git（`.gitignore` 已含 `.env`）。
+**Credential management**: keep everything in `.env`; do not commit to git (`.gitignore` already contains `.env`).
 
 ```bash
-# .env (唔 commit)
+# .env (do not commit)
 MINIMAX_API_KEY=...
 MINIMAX_GROUP_ID=...
 DEEPSEEK_API_KEY=...
 ```
 
-> 🔒 **點解 GroupId 都放 .env？** 佢本身唔係 secret（單獨唔能登入），但係帳號識別碼。
-> Public repo 嘅良好慣例：帳號識別碼同 credential 一齊放 env，避免喺 code/spec 度暴露你嘅帳號。
+> 🔒 **Why put GroupId in .env too?** It is not a secret on its own (it cannot log in by itself), but it is an account identifier.
+> A good convention for public repos: keep account identifiers in env alongside credentials, to avoid exposing your account in code/specs.
 
 ---
 
-## 4. Generator Flow（MiniMax M3）
+## 4. Generator Flow (MiniMax M3)
 
 ### Endpoint
 
@@ -105,7 +105,7 @@ POST https://api.minimax.io/v1/chat/completions
 {
   "model": "MiniMax-M3",
   "messages": [
-    { "role": "system", "content": "[System Prompt — 見下]" },
+    { "role": "system", "content": "[System Prompt — see below]" },
     { "role": "user", "content": "[User Input — Raw Data JSON]" }
   ],
   "temperature": 0.3,
@@ -114,7 +114,7 @@ POST https://api.minimax.io/v1/chat/completions
 }
 ```
 
-### User Input（Raw Data，已 strip PII）
+### User Input (Raw Data, PII stripped)
 
 ```json
 {
@@ -122,20 +122,20 @@ POST https://api.minimax.io/v1/chat/completions
   "gps": { "lat": -33.8568, "lng": 151.2153 },
   "trigger_type": "aesthetic_gaze",
   "domain": "tourism",
-  "human_label": "靚",
-  "human_description": "夕陽穿過貨櫃之間嘅縫隙，形成金色光柱。",
-  "tags": ["日落", "貨櫃碼頭"]
+  "human_label": "beautiful",
+  "human_description": "Sunset light piercing through the gaps between shipping containers, forming golden beams of light.",
+  "tags": ["sunset", "container terminal"]
 }
 ```
 
-### System Prompt（Generator）
+### System Prompt (Generator)
 
 ```
-你係一個「人類視角知識工程師」。
+You are a "Human-Perspective Knowledge Engineer".
 
-任務：將參與者嘅觸發數據轉化為一篇標準化嘅 Markdown 筆記。
+Task: Transform the participant's trigger data into a standardized Markdown note.
 
-輸出格式必須為 JSON，包含：
+The output format must be JSON, containing:
 {
   "frontmatter": {
     "timestamp": "...",
@@ -146,17 +146,17 @@ POST https://api.minimax.io/v1/chat/completions
     "tags": "..."
   },
   "body": {
-    "human_description": "[保留原文]",
-    "ai_analysis": "[根據描述推測場景、情感、專業判斷，200-300字]",
+    "human_description": "[preserve the original text]",
+    "ai_analysis": "[infer the scene, sentiment, and professional judgment from the description, 200-300 words]",
     "related_links": ["[[wikilink_1]]", "[[wikilink_2]]"]
   }
 }
 
-規則：
-- 語言跟隨參與者輸入嘅語言（粵語/英文/普通話）
-- 如果 human_label = "靚" → 加入 #aesthetic 標籤
-- 如果 human_label = "異常" → 加入 #anomaly 標籤
-- 唔好憑空創作事實，只係根據提供嘅資料推測
+Rules:
+- The language follows the language of the participant's input (English / Cantonese / Mandarin)
+- If human_label = "beautiful" → add the #aesthetic tag
+- If human_label = "anomaly" → add the #anomaly tag
+- Do not fabricate facts; only infer based on the provided data
 ```
 
 ### Response
@@ -169,21 +169,21 @@ POST https://api.minimax.io/v1/chat/completions
     "gps_lng": 151.2153,
     "trigger_type": "aesthetic_gaze",
     "domain": "tourism",
-    "tags": "日落, 貨櫃碼頭, 黃金時刻"
+    "tags": "sunset, container terminal, golden hour"
   },
   "body": {
-    "human_description": "夕陽穿過貨櫃之間嘅縫隙，形成金色光柱。",
-    "ai_analysis": "呢個景觀展現了悉尼港口獨特嘅工業美學...",
-    "related_links": ["[[悉尼港口]]", "[[工業美學]]"]
+    "human_description": "Sunset light piercing through the gaps between shipping containers, forming golden beams of light.",
+    "ai_analysis": "This scene showcases the unique industrial aesthetics of Sydney Harbour...",
+    "related_links": ["[[Sydney Harbour]]", "[[Industrial Aesthetics]]"]
   }
 }
 ```
 
 ---
 
-## 5. Auditor Flow（DeepSeek V4 Flash）
+## 5. Auditor Flow (DeepSeek V4 Flash)
 
-Generator 產出嘅 draft entry 會先過 auditor，通過先寫入 `/01_Entries/`。
+The draft entry produced by the generator first goes through the auditor before being written to `/01_Entries/`.
 
 ### Endpoint
 
@@ -194,73 +194,73 @@ POST https://api.deepseek.com/chat/completions
 ### Auditor System Prompt
 
 ```
-你係一個「知識審計員」。你會收到一份 draft wiki entry 同佢嘅原始數據。
+You are a "Knowledge Auditor". You will receive a draft wiki entry and its raw data.
 
-校驗以下項目，輸出 JSON：
+Validate the following items and output JSON:
 {
   "verdict": "pass" | "fail",
-  "issues": [                          // 失敗原因（verdict=fail 時填）
+  "issues": [                          // reasons for failure (filled when verdict=fail)
     {
       "type": "hallucination" | "schema_violation" | "bias" | "missing_field",
       "detail": "..."
     }
   ],
-  "corrected": { ... }                 // 可選：提供修正版（verdict=fail 時）
+  "corrected": { ... }                 // optional: provide a corrected version (when verdict=fail)
 }
 
-校驗規則：
-- hallucination：AI 分析入面有冇原始數據冇提到嘅事實？
-- schema_violation：frontmatter 係咪齊 timestamp/gps_lat/gps_lng/trigger_type/domain？
-  trigger_type / domain 係咪屬於有效列舉值？
-- bias：AI 分析有冇不當偏見或主觀價值判斷超出「人類視角」範圍？
-- missing_field：body 三部分（human_description / ai_analysis / related_links）齊唔齊？
+Validation rules:
+- hallucination: does the AI analysis contain facts not mentioned in the raw data?
+- schema_violation: does the frontmatter include timestamp/gps_lat/gps_lng/trigger_type/domain?
+  Are trigger_type / domain valid enumerated values?
+- bias: does the AI analysis contain inappropriate bias or subjective value judgments beyond the "human perspective" scope?
+- missing_field: are all three body parts present (human_description / ai_analysis / related_links)?
 ```
 
-### 審查結果處理（**預設：自動修正**）
+### Audit Result Handling (**Default: auto-correct**)
 
-| Verdict | 動作 |
+| Verdict | Action |
 | :--- | :--- |
-| `pass` | 寫入 `/01_Entries/` |
-| `fail` + 有 `corrected` | **自動**用 auditor 嘅 `corrected` 版寫入 `/01_Entries/`，frontmatter 加 `audited: corrected`，並喺 entry 底部附 `<!-- audit_log -->` 記錄原 issues |
-| `fail` + 無 `corrected` | 先自動重跑 generator 1 次（temperature +0.1，max 2 次重試）；仍 fail 先寫入 `/00_Inbox/quarantine/` 待人手處理，附 auditor issues |
+| `pass` | Write to `/01_Entries/` |
+| `fail` + has `corrected` | **Automatically** use the auditor's `corrected` version and write to `/01_Entries/`; add `audited: corrected` to the frontmatter, and append an `<!-- audit_log -->` at the bottom of the entry recording the original issues |
+| `fail` + no `corrected` | First automatically re-run the generator once (temperature +0.1, max 2 retries); if it still fails, write to `/00_Inbox/quarantine/` for manual handling, attaching the auditor issues |
 
-**設計理由**：P1 目標係 passive capture pipeline，要盡量少人手介入。auditor（DeepSeek V4 Flash）夠平，自動修正 + audit_log 係最有效率嘅 throughput。所有修正都留 log，事後可翻查。
+**Design rationale**: The goal of P1 is a passive capture pipeline that minimizes manual intervention. The auditor (DeepSeek V4 Flash) is cheap enough that auto-correction + audit_log is the most efficient throughput. All corrections leave a log that can be reviewed afterward.
 
 ---
 
-## 6. PII Stripping（喺 API 前做）
+## 6. PII Stripping (Done Before the API)
 
-喺 Raw Data 送 generator 之前，先用 `tools/pii_anonymizer/` 處理：
+Before Raw Data is sent to the generator, process it first with `tools/pii_anonymizer/`:
 
 ```python
 def strip_pii(input_data):
-    # 人臉模糊（blur_faces.py）
-    # 車牌模糊（blur_plates.py）
-    # 移除姓名/電話/email（文字掃描）
+    # Face blurring (blur_faces.py)
+    # License plate blurring (blur_plates.py)
+    # Remove names / phones / emails (text scan)
     return sanitized_data
 ```
 
-**鐵律**：任何未過 PII stripping 嘅數據，唔可以送 LLM API。
+**Ironclad rule**: any data that has not passed PII stripping must not be sent to the LLM API.
 
 ---
 
-## 7. Token / 成本考量
+## 7. Token / Cost Considerations
 
-| 維度 | Generator (MiniMax M3) | Auditor (DeepSeek V4 Flash) |
+| Dimension | Generator (MiniMax M3) | Auditor (DeepSeek V4 Flash) |
 | :--- | :--- | :--- |
-| 調用頻率 | 每個 raw entry 1 次 | 每個 draft entry 1 次 |
-| 預期 token | ~400 in + ~500 out | ~700 in（draft+raw）+ ~200 out |
-| 成本策略 | 食 token plan（主預算） | 用 flash 控成本 |
-| 可調參數 | `temperature=0.3`（穩定） | `temperature=0.0`（校驗要 deterministic） |
+| Call frequency | 1 per raw entry | 1 per draft entry |
+| Expected tokens | ~400 in + ~500 out | ~700 in (draft+raw) + ~200 out |
+| Cost strategy | Consumes the token plan (main budget) | Use flash to control cost |
+| Tunable parameters | `temperature=0.3` (stable) | `temperature=0.0` (validation must be deterministic) |
 
 ---
 
-## 8. 錯誤處理
+## 8. Error Handling
 
-| HTTP Code | 情況 | 處理 |
+| HTTP Code | Situation | Handling |
 | :--- | :--- | :--- |
-| 400 | Invalid Input | 返回 schema 錯誤訊息 |
-| 401 | API key 無效 | 檢查 `.env` |
+| 400 | Invalid Input | Return the schema error message |
+| 401 | Invalid API key | Check `.env` |
 | 429 | Rate Limit | Exponential backoff |
-| 500 | Provider Error | 寫入 `/00_Inbox/` 待重試 |
-| Auditor `fail` | 審查唔通過 | 見 §5 審查結果處理 |
+| 500 | Provider Error | Write to `/00_Inbox/` for retry |
+| Auditor `fail` | Audit failed | See §5 audit result handling |

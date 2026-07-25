@@ -38,7 +38,7 @@ def check_env_keys() -> bool:
           f"{'SET' if group_id else 'EMPTY (optional for chat)'}")
 
     if not (minimax and deepseek):
-        print("\n  → 點填：用編輯器開 .env（唔好 paste 入 chat），填入兩個 key。")
+        print("\n  → How to set: open .env with an editor (do not paste into chat), fill in both keys.")
         return False
     return True
 
@@ -57,16 +57,16 @@ def check_kubo() -> bool:
             return True
     except (urllib.error.URLError, OSError, json.JSONDecodeError):
         print(f"  {_mark(False)} kubo daemon unreachable at {api_url}")
-        print("     → 裝 kubo: https://docs.ipfs.tech/install/")
-        print("     → 啟動：`ipfs daemon &`")
-        print("     （P2 仍然可以用 --mock，淨係唔能 publish 到真 IPFS）")
+        print("     → Install kubo: https://docs.ipfs.tech/install/")
+        print("     → Start it: `ipfs daemon &`")
+        print("     (P2 can still run with --mock, just cannot publish to real IPFS)")
         return False
 
 
 def _ping_openai_compat(base_url: str, api_key: str, label: str) -> bool:
     """Ping 一個 OpenAI-compatible endpoint，用 /models 或者最平嘅 chat call。"""
     if not api_key:
-        print(f"  {_mark(False)} {label}: 冇 key（skip）")
+        print(f"  {_mark(False)} {label}: no key (skip)")
         return False
 
     # 先試 /models（多數 provider 支援，唔燒 token）
@@ -77,16 +77,16 @@ def _ping_openai_compat(base_url: str, api_key: str, label: str) -> bool:
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             if resp.status == 200:
-                print(f"  {_mark(True)} {label}: auth OK，/models 200")
+                print(f"  {_mark(True)} {label}: auth OK, /models 200")
                 return True
     except urllib.error.HTTPError as e:
         # 401 = key 錯；其他 status 可能係 endpoint 唔支援 /models，再試 chat ping
         if e.code == 401:
-            print(f"  {_mark(False)} {label}: 401 Unauthorized — key 無效或過期")
+            print(f"  {_mark(False)} {label}: 401 Unauthorized — key invalid or expired")
             return False
         # fall through to chat ping
     except (urllib.error.URLError, OSError):
-        print(f"  {_mark(False)} {label}: 連唔到 {base_url}（network / endpoint 錯）")
+        print(f"  {_mark(False)} {label}: cannot reach {base_url} (network / endpoint error)")
         return False
 
     # /models 唔得，做一個最細嘅 chat call（max_tokens=1）
@@ -117,7 +117,7 @@ def _chat_ping(base_url: str, api_key: str, label: str) -> bool:
         )
         with urllib.request.urlopen(req, timeout=20) as resp:
             if resp.status == 200:
-                print(f"  {_mark(True)} {label}: chat ping OK（model={model}）")
+                print(f"  {_mark(True)} {label}: chat ping OK (model={model})")
                 return True
             print(f"  {_mark(False)} {label}: HTTP {resp.status}")
             return False
@@ -130,7 +130,7 @@ def _chat_ping(base_url: str, api_key: str, label: str) -> bool:
         print(f"  {_mark(False)} {label}: HTTP {e.code} — {body}")
         return False
     except (urllib.error.URLError, OSError) as e:
-        print(f"  {_mark(False)} {label}: 連唔到 — {e}")
+        print(f"  {_mark(False)} {label}: cannot reach — {e}")
         return False
 
 
@@ -145,8 +145,8 @@ def check_minimax() -> bool:
 
 def check_deepseek() -> bool:
     print("\n── 4. DeepSeek V4 Flash (auditor) ──")
-    print("  （注意：deepseek-chat / deepseek-reasoner 已喺 2026-07-24 deprecate，")
-    print("   必須用 deepseek-v4-flash）")
+    print("  (Note: deepseek-chat / deepseek-reasoner were deprecated on 2026-07-24,")
+    print("   you must use deepseek-v4-flash)")
     return _ping_openai_compat(
         os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
         os.getenv("DEEPSEEK_API_KEY", ""),
@@ -188,8 +188,9 @@ def run_preflight(quick: bool = False) -> int:
         print("   python -m llm_wiki_engine process \\")
         print("       --inbox llm_wiki_engine/test_samples --entries ./real_entries")
     else:
-        print("⚠️  部分未 ready。上面嘅 ❌ 項各有 fix 提示。")
-        print("    可以繼續用 --mock 開發；填好 / 啟動好對應項之後再跑 preflight。")
+        print("⚠️  Some items are not ready yet. Each ❌ above has a fix hint.")
+        print("    You can keep developing with --mock; once you have filled in / started the")
+        print("    corresponding items, run preflight again.")
 
     return 0 if all_ok else 1
 

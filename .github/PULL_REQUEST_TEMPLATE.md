@@ -1,4 +1,4 @@
-## 📌 Pull Request 類型
+## 📌 Pull Request Type
 
 - [ ] 🐛 Bug Fix
 - [ ] ✨ New Feature
@@ -8,39 +8,39 @@
 
 ---
 
-## 📝 改動說明
+## 📝 Change Description
 
-<!-- 清楚描述你改咗咩，點解要改 -->
-
----
-
-## 🧪 測試結果
-
-- [ ] `generate_seed.py` 執行成功
-- [ ] `validate_seed.py` 校驗通過
-- [ ] 無新增 warning / error
+<!-- Clearly describe what you changed and why -->
 
 ---
 
-## ✅ CLA 確認
+## 🧪 Test Results
 
-**我同意以下條款**：
-
-1. 我貢獻嘅 Code 將以 **AGPL-3.0** 授權釋出
-2. 我貢獻嘅 Seed Data 將以 **CC-BY-NC-SA-4.0** 授權釋出
-3. Goldman Global Research Labs 保留提供商業授權嘅權利
-4. 我保留我貢獻內容嘅著作權
-
-- [ ] 我已閱讀並同意 CLA 條款
+- [ ] `generate_seed.py` runs successfully
+- [ ] `validate_seed.py` passes validation
+- [ ] No new warnings / errors
 
 ---
 
-## 📎 相關 Issue
+## ✅ CLA Confirmation
+
+**I agree to the following terms**:
+
+1. The Code I contribute will be released under **AGPL-3.0**
+2. The Seed Data I contribute will be released under **CC-BY-NC-SA-4.0**
+3. Goldman Global Research Labs retains the right to offer commercial licenses
+4. I retain the copyright to the content I contribute
+
+- [ ] I have read and agree to the CLA terms
+
+---
+
+## 📎 Related Issue
 
 <!-- Closes #123, Related to #456 -->
 
 ---
 
-## 🙏 感謝
+## 🙏 Thanks
 
-多謝你嘅貢獻！🔥
+Thank you for your contribution! 🔥

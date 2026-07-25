@@ -1,18 +1,18 @@
 # {{title}} — Schema Note
 
-> 用呢個 template 記錄一個領域嘅 schema / 分類 / 概念結構。
+> Use this template to record the schema / classification / concept structure of a domain.
 
-## 定義
+## Definition
 
 
-## 子類別
+## Subcategories
 
 - 
 
-## 相關 Entry
+## Related Entries
 
 - [[]]
 
-## 相關 MOC
+## Related MOC
 
 - [[]]

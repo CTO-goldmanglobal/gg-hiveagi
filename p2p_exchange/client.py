@@ -75,12 +75,12 @@ class MockP2PClient(P2PClient):
     def resolve(self, cid: str) -> List[Tuple[str, bytes]]:
         if not looks_like_mock_cid(cid):
             raise ValueError(
-                f"MockP2PClient 只能 resolve mock CID（mockbafy...），收到：{cid}"
+                f"MockP2PClient can only resolve mock CIDs (mockbafy...), got: {cid}"
             )
         store_path = self.store_dir / f"{cid}.json"
         if not store_path.exists():
             raise FileNotFoundError(
-                f"Mock store 冇呢個 CID：{cid}（可能未 publish，或喺唔同節點）"
+                f"Mock store has no such CID: {cid} (maybe not published yet, or on a different node)"
             )
         import base64
         payload = json.loads(store_path.read_text(encoding="utf-8"))
@@ -154,7 +154,7 @@ class KuboP2PClient(P2PClient):
                     root = obj["Hash"]
                     break
         if root is None:
-            raise RuntimeError(f"kubo /add 冇回 root CID：{lines[-3:]}")
+            raise RuntimeError(f"kubo /add returned no root CID: {lines[-3:]}")
         return root
 
     def resolve(self, cid: str) -> List[Tuple[str, bytes]]:
@@ -171,7 +171,7 @@ class KuboP2PClient(P2PClient):
 
         objects = ls_data.get("Objects", [])
         if not objects:
-            raise RuntimeError(f"kubo /ls 回空：{ls_data}")
+            raise RuntimeError(f"kubo /ls returned empty: {ls_data}")
 
         files: List[Tuple[str, bytes]] = []
         for link in objects[0].get("Links", []):

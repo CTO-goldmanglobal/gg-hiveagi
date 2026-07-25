@@ -1,30 +1,30 @@
 # PII Anonymizer
 
-喺 Raw Data（圖片 / 影片）送 LLM Wiki Engine 之前，移除人臉同車牌等 PII。
-**確保只有人類視角嘅「場景知識」入 wiki，而唔係可識別個人嘅資料。**
+Removes PII such as faces and license plates from Raw Data (images / video) before it is sent to the LLM Wiki Engine.
+**Ensures that only the "scene knowledge" of the human perspective enters the wiki, not personally identifiable data.**
 
-## 狀態
+## Status
 
-🚧 **P0：STUB。** 介面已定義，實作留待 P1。
+🚧 **P0: STUB.** The interface is defined; the implementation is deferred to P1.
 
-| 模組 | 狀態 | 計劃技術 |
+| Module | Status | Planned Technology |
 | :--- | :--- | :--- |
 | `blur_faces.py` | STUB | MediaPipe Face Detection + OpenCV Gaussian blur |
 | `blur_plates.py` | STUB | HyperLPR / YOLOv8 plate detector + OpenCV blur |
 
-## 設計原則
+## Design Principles
 
-1. **送 LLM 前必做** — `strip_pii()` 喺 API call 之前執行（見 `specs/api-protocol-v1.md` §8）
-2. **不可逆** — 模糊化係破壞性操作，原图唔保留
-3. **可校驗** — 處理後會回報 detected count 俾貢獻者確認
+1. **Mandatory before sending to the LLM** — `strip_pii()` runs before the API call (see `specs/api-protocol-v1.md` §8)
+2. **Irreversible** — blurring is a destructive operation; the original image is not retained
+3. **Verifiable** — after processing, the detected count is reported for the contributor to confirm
 
-## P1 之後會加嘅嘢
+## What Will Be Added After P1
 
-- 影片支援（逐幀處理）
-- 聲音 PII（聲紋 / 姓名 / 電話）文字掃描
-- 設定檔控制 blur 強度同邊啲類型要處理
+- Video support (frame-by-frame processing)
+- Audio PII (voiceprints / names / phone numbers) text scanning
+- Configuration files to control blur strength and which types to process
 
-## 介面預覽
+## Interface Preview
 
 ```python
 from blur_faces import FaceBlur
@@ -37,6 +37,6 @@ pb = PlateBlur(blur_strength=71)
 pb.process_file("raw/frame_001.jpg", "anon/frame_001.jpg")
 ```
 
-## 聯絡
+## Contact
 
 cto@goldmanglobal.com.au

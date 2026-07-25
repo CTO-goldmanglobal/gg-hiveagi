@@ -1,95 +1,95 @@
 # Video Ingest
 
-將 street video 轉為 Hive.AGI RawData。**兩條 path**，配合唔同需求。
+Converts street video into Hive.AGI RawData. **Two paths**, for different needs.
 
 ---
 
-## Path 1: Manual curate（推薦，零 PII 風險）
+## Path 1: Manual Curation (recommended, zero PII risk)
 
-由**人**定義邊個瞬間值得記錄 —— 呢個本身就係「人類視角」嘅核心。
+A **human** decides which moments are worth recording — this itself is the core of the "human perspective".
 
-### 流程
+### Workflow
 
 ```bash
-# 1. （可選）抽指定時間點嘅 frame 做參考
+# 1. (Optional) Extract frames at specific timestamps as references
 python tools/video_ingest/extract_frames.py video.mp4 \
     --at 00:01:23,00:03:45,00:07:12 \
     --out frames/
 
-# 2. 用任何 player 播片，見到 moment 就暫停
-# 3. 行 helper，填寫每筆 trigger
+# 2. Play the video in any player, pause when you see a moment
+# 3. Run the helper, filling in each trigger
 python tools/video_ingest/capture_helper.py \
     --video street_walk_001.mp4 \
     --inbox ./00_Inbox
-# （helper 會逐筆問你 timestamp / 地點 / trigger_type / 描述）
+# (the helper will ask you for each entry's timestamp / location / trigger_type / description)
 
-# 4. 收集完之後，跑 P1 engine（純文字，唔碰 vision API）
+# 4. After collection, run the P1 engine (text only, no vision API)
 python -m llm_wiki_engine process \
     --inbox ./00_Inbox --entries ./01_Entries
 ```
 
-**點解推薦**：
-- 零 PII 風險（唔上傳任何圖片）
-- 每筆 trigger 都有你嘅人類判斷（唔係 AI 自動猜）
-- 一條長片可以 curate 出 5–20 個高質 trigger
+**Why it is recommended**:
+- Zero PII risk (no images are uploaded)
+- Each trigger carries your human judgment (the AI does not guess automatically)
+- One long video can be curated into 5–20 high-quality triggers
 
 ---
 
-## Path 2: Auto-vision（實驗性，需 PII blur）
+## Path 2: Auto-Vision (experimental, requires PII blur)
 
-AI 自動睇 frame 生成描述。**必須先過 PII blur**（人臉 + 車牌）。
+The AI automatically looks at frames to generate descriptions. **Must pass PII blur first** (faces + license plates).
 
-### 流程
+### Workflow
 
 ```bash
-# 1. 抽 frame（每 30 秒一帧）
+# 1. Extract frames (one frame every 30 seconds)
 python tools/video_ingest/extract_frames.py video.mp4 --every 30 --out frames/
 
-# 2. Auto-vision：blur + MiniMax M3 + 寫 inbox
+# 2. Auto-vision: blur + MiniMax M3 + write to inbox
 python -m llm_wiki_engine process-video \
     --frames frames/ \
     --inbox ./00_Inbox \
     --location Sydney \
     --every 30
-# （每個 frame：先 blur 人臉/車牌 → 送 MiniMax M3 → 寫 RawData JSON）
+# (for each frame: blur faces/license plates first → send to MiniMax M3 → write RawData JSON)
 
-# 3. 跑 P1 engine 做 audit（DeepSeek V4 Flash）
+# 3. Run the P1 engine for audit (DeepSeek V4 Flash)
 python -m llm_wiki_engine process \
     --inbox ./00_Inbox --entries ./01_Entries
 ```
 
-### ⚠️ 安全設計
+### ⚠️ Safety Design
 
-- **冇 `--skip-blur` flag**。呢個係刻意嘅。
-- 每個 frame 送 LLM 之前必須過 `anonymize_image()`（MediaPipe face + OpenCV plate）
-- blur 失敗 → 拒絕送 LLM（`SafetyError`）
-- 詳見 `tools/pii_anonymizer/`
+- **There is no `--skip-blur` flag.** This is intentional.
+- Each frame must pass `anonymize_image()` (MediaPipe face + OpenCV plate) before being sent to the LLM
+- If blur fails → refuse to send to the LLM (`SafetyError`)
+- See `tools/pii_anonymizer/`
 
-### 準確度限制
+### Accuracy Limitations
 
-- **車牌偵測**：edge-based 通用偵測器，AU 車牌 recall 中等。請人手 review 低置信度 frame。
-- **Vision token 成本**：每 frame 約等於 ~500–1000 tokens。抽 frame 間隔係成本旋鈕。
+- **License plate detection**: an edge-based generic detector with moderate recall for AU plates. Manually review low-confidence frames.
+- **Vision token cost**: each frame is roughly ~500–1000 tokens. The frame extraction interval is the cost knob.
 
 ---
 
-## 依賴
+## Dependencies
 
-| Path | 需要安裝 |
+| Path | What to Install |
 |---|---|
-| **Path 1 (manual)** | ffmpeg（`brew install ffmpeg`）|
+| **Path 1 (manual)** | ffmpeg (`brew install ffmpeg`)|
 | **Path 2 (auto-vision)** | ffmpeg + `pip install -r tools/pii_anonymizer/requirements.txt` + MiniMax API key |
 
-## 檔案
+## Files
 
 ```
 tools/video_ingest/
-├── extract_frames.py        # ffmpeg wrapper（兩條 path 共用）
-├── capture_helper.py        # Path 1 互動 helper（純 stdlib）
+├── extract_frames.py        # ffmpeg wrapper (shared by both paths)
+├── capture_helper.py        # Path 1 interactive helper (pure stdlib)
 ├── templates/
-│   └── manual_capture.json  # 手填 template
-└── README.md                # 呢份
+│   └── manual_capture.json  # manual fill-in template
+└── README.md                # this file
 ```
 
 ## License
 
-AGPL-3.0（同主 repo 一致）。
+AGPL-3.0 (consistent with the main repo).

@@ -26,8 +26,8 @@ def strip_pii(raw: Dict[str, Any]) -> Dict[str, Any]:
     # 2. 圖片 PII（stub）
     if any(k in result for k in ("image_path", "image_data", "video_path")):
         print(
-            "⚠️  圖片/影片 PII stripping 尚未實作（見 tools/pii_anonymizer/）。"
-            "呢筆數據嘅圖片未經脫敏就送 LLM —— 生產環境請先完成 P1.5。"
+            "⚠️  Image/video PII stripping is not implemented yet (see tools/pii_anonymizer/)."
+            "The images in this record are sent to the LLM un-anonymized — please complete P1.5 in production."
         )
 
     return result

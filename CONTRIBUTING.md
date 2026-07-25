@@ -1,38 +1,38 @@
 # Contributing to Project Hive.AGI
 
-感謝你有興趣參與呢個計劃！呢份文件會幫你了解點樣貢獻、需要遵守嘅規則，以及我哋點樣一齊建立「人類視角知識共生網絡」。
+Thank you for your interest in participating in this project! This document will help you understand how to contribute, the rules to follow, and how we work together to build the "human-perspective knowledge symbiosis network".
 
 ---
 
-## 🧭 貢獻方式
+## 🧭 Ways to Contribute
 
-| 類型 | 說明 | 需要嘅技能 |
+| Type | Description | Skills Required |
 | :--- | :--- | :--- |
-| **Seed Package 貢獻** | 分享你嘅人類視角數據（旅遊、法律、工業等） | 任何有 Obsidian Vault 嘅人 |
-| **Code 貢獻** | 改善 Python Scripts / Specs / Tools | Python, Markdown, Git |
-| **文檔貢獻** | 改善 README、規範文件、教學 | 寫作、技術文檔 |
-| **社群貢獻** | 測試、反饋、推廣 | 溝通、測試 |
+| **Seed Package Contribution** | Share your human-perspective data (travel, legal, industrial, etc.) | Anyone with an Obsidian Vault |
+| **Code Contribution** | Improve Python Scripts / Specs / Tools | Python, Markdown, Git |
+| **Documentation Contribution** | Improve README, specifications, tutorials | Writing, technical documentation |
+| **Community Contribution** | Testing, feedback, promotion | Communication, testing |
 
 ---
 
 ## 📄 Contributor License Agreement (CLA)
 
-由於 Project Hive.AGI 採用 **雙重授權 (AGPL-3.0 + CC-BY-NC-SA-4.0 + Commercial)**，所有貢獻者必須同意 CLA：
+Because Project Hive.AGI uses **dual licensing (AGPL-3.0 + CC-BY-NC-SA-4.0 + Commercial)**, all contributors must agree to the CLA:
 
-**CLA 條款**（你提交 PR 時會確認）：
+**CLA Terms** (you will confirm these when submitting a PR):
 
-1. 你貢獻嘅 Code 將以 **AGPL-3.0** 授權釋出
-2. 你貢獻嘅 Seed Data 將以 **CC-BY-NC-SA-4.0** 授權釋出
-3. Goldman Global Research Labs 保留提供 **商業授權** 嘅權利
-4. 你保留你貢獻內容嘅著作權
+1. The Code you contribute will be released under **AGPL-3.0**
+2. The Seed Data you contribute will be released under **CC-BY-NC-SA-4.0**
+3. Goldman Global Research Labs retains the right to offer **commercial licenses**
+4. You retain the copyright to the content you contribute
 
-**點樣簽署**：喺每個 Pull Request 入面，Check 返 CLA 確認 checkbox（我哋提供咗 PR Template）。
+**How to sign**: In each Pull Request, check the CLA confirmation checkbox (we provide a PR Template).
 
 ---
 
-## 🚀 貢獻流程（Code）
+## 🚀 Contribution Workflow (Code)
 
-### 1. Fork Repo
+### 1. Fork the Repo
 
 ```bash
 git clone https://github.com/CTO-goldmanglobal/gg-hiveagi.git
@@ -40,10 +40,10 @@ cd gg-hiveagi
 git checkout -b feature/your-feature-name
 ```
 
-### 2. 寫 Code 並測試
+### 2. Write Code and Test
 
 ```bash
-# 確保通過 Smoke Test
+# Ensure it passes the Smoke Test
 python tools/seed_generator/generate_seed.py
 python tools/seed_generator/validate_seed.py --path seed_output/seed_goldman_20260725/
 ```
@@ -52,46 +52,46 @@ python tools/seed_generator/validate_seed.py --path seed_output/seed_goldman_202
 
 ```bash
 git add .
-git commit -m "feat: 你嘅改動說明"
+git commit -m "feat: description of your change"
 git push origin feature/your-feature-name
 ```
 
-### 4. Open Pull Request
+### 4. Open a Pull Request
 
-- 標題清楚說明改動內容
-- 描述改動原因同測試結果
-- Check CLA 確認 checkbox
+- Title should clearly describe the change
+- Describe the reason for the change and the test results
+- Check the CLA confirmation checkbox
 
 ---
 
-## 🧪 測試要求
+## 🧪 Testing Requirements
 
-| 類型 | 要求 |
+| Type | Requirement |
 | :--- | :--- |
-| **Python Scripts** | 必須通過 `generate_seed.py` + `validate_seed.py` Smoke Test |
-| **Specs** | 必須同現有 Schema 相容，或者清楚標明版本升級 |
-| **Docs** | 必須通過 Markdown lint（無嚴重語法錯誤） |
+| **Python Scripts** | Must pass the `generate_seed.py` + `validate_seed.py` Smoke Test |
+| **Specs** | Must be compatible with the existing schema, or clearly indicate a version upgrade |
+| **Docs** | Must pass Markdown lint (no serious syntax errors) |
 
 ---
 
-## 📌 Code 風格
+## 📌 Code Style
 
-- Python：PEP 8（用 `black` 或 `ruff` 格式化）
-- Markdown：用 `#` 做標題，`-` 做列表
-- 檔案命名：用小寫 + 底線（snake_case）
-
----
-
-## 💬 溝通渠道
-
-- **GitHub Issues**：Bug Report / Feature Request
-- **GitHub Discussions**：一般討論、概念驗證
-- **Discord**：（即將開放）
+- Python: PEP 8 (format with `black` or `ruff`)
+- Markdown: use `#` for headings, `-` for lists
+- File naming: use lowercase + underscores (snake_case)
 
 ---
 
-## 🙏 感謝你嘅貢獻！
+## 💬 Communication Channels
 
-每一個 Seed Package、每一行 Code、每一份文檔，都係令 Hive.AGI 更接近「人類視角 AGI」嘅重要一步。
+- **GitHub Issues**: Bug Reports / Feature Requests
+- **GitHub Discussions**: General discussion, proof of concepts
+- **Discord**: (opening soon)
 
-**多謝你加入呢個運動。**
+---
+
+## 🙏 Thank You for Your Contribution!
+
+Every Seed Package, every line of code, every document is an important step toward bringing Hive.AGI closer to a "human-perspective AGI".
+
+**Thank you for joining this movement.**

@@ -45,7 +45,7 @@ def compute_mock_cid(files: List[Tuple[str, bytes]]) -> str:
         str: 例如 "mockbafybeiA2K3..."
     """
     if not files:
-        raise ValueError("compute_mock_cid: files 列表為空")
+        raise ValueError("compute_mock_cid: files list is empty")
 
     # 排序保證順序獨立
     sorted_files = sorted(files, key=lambda fc: fc[0])

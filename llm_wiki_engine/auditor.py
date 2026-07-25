@@ -61,10 +61,10 @@ class WikiAuditor:
         try:
             data = extract_json(response)
             if data is None:
-                raise ValueError("搵唔到有效 JSON object")
+                raise ValueError("No valid JSON object found")
         except (json.JSONDecodeError, ValueError) as e:
             raise ValueError(
-                f"Auditor 返回嘅 JSON 無效: {e}\nRaw: {response[:200]}"
+                f"Auditor returned invalid JSON: {e}\nRaw: {response[:200]}"
             ) from e
 
         verdict = data.get("verdict", "fail")
@@ -76,7 +76,7 @@ class WikiAuditor:
                 corrected = DraftEntry(**data["corrected"])
             except ValidationError as e:
                 # corrected 無效 → 當作 fail-without-correction
-                issues.append(f"auditor 提供嘅 corrected 版本無效: {e}")
+                issues.append(f"auditor-provided corrected version is invalid: {e}")
 
         return AuditResult(
             verdict=verdict if verdict in ("pass", "fail") else "fail",

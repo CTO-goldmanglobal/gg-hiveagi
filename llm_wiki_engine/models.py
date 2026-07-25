@@ -139,19 +139,19 @@ class FinalEntry(BaseModel):
             f"human_label: {human_label}",
             "---",
             "",
-            "## 人類描述",
+            "## Human Description",
             self.body_human_description,
             "",
-            "## AI 分析",
+            "## AI Analysis",
             self.body_ai_analysis,
             "",
-            "## 相關鏈接",
+            "## Related Links",
         ]
         if self.body_related_links:
             for link in self.body_related_links:
                 lines.append(f"- {link}")
         else:
-            lines.append("<!-- 自動生成嘅雙向鏈接 -->")
+            lines.append("<!-- Auto-generated bidirectional links -->")
 
         # Audit 標記（修正過嘅 entry 留 audit_log）
         if self.audited_corrected and self.audit_log:

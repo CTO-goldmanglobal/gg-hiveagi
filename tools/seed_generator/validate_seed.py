@@ -81,36 +81,36 @@ def validate_entry(entry_path):
     fm = parse_frontmatter(text)
 
     if fm is None:
-        errors.append(f"{entry_path.name}: 無法解析 frontmatter（缺 --- 圍欄或 YAML 無效）")
+        errors.append(f"{entry_path.name}: cannot parse frontmatter (missing --- fences or invalid YAML)")
         return False, errors
 
     # required keys
     for key in REQUIRED_FRONTMATTER:
         if key not in fm:
-            errors.append(f"{entry_path.name}: 缺少 required frontmatter `{key}`")
+            errors.append(f"{entry_path.name}: missing required frontmatter `{key}`")
 
     # type / enum 校驗（只喺 key 存在時做）
     # YAML 會自動將未加引號嘅 timestamp 解析成 datetime object；接納並轉回 ISO string
     if "timestamp" in fm and isinstance(fm["timestamp"], datetime):
         fm["timestamp"] = fm["timestamp"].isoformat().replace("+00:00", "Z")
     if "timestamp" in fm and not isinstance(fm["timestamp"], str):
-        errors.append(f"{entry_path.name}: timestamp 必須係 string")
+        errors.append(f"{entry_path.name}: timestamp must be a string")
     elif "timestamp" in fm and not TIMESTAMP_PATTERN.match(str(fm["timestamp"])):
-        errors.append(f"{entry_path.name}: timestamp 唔符合 ISO 8601（{fm['timestamp']}）")
+        errors.append(f"{entry_path.name}: timestamp is not valid ISO 8601 ({fm['timestamp']})")
 
     for float_key in ("gps_lat", "gps_lng"):
         if float_key in fm and not isinstance(fm[float_key], (int, float)):
-            errors.append(f"{entry_path.name}: {float_key} 必須係 number（收到 {type(fm[float_key]).__name__}）")
+            errors.append(f"{entry_path.name}: {float_key} must be a number (got {type(fm[float_key]).__name__})")
 
     if "trigger_type" in fm and fm["trigger_type"] not in VALID_TRIGGER_TYPES:
         errors.append(
-            f"{entry_path.name}: trigger_type `{fm['trigger_type']}` 唔係有效值 "
+            f"{entry_path.name}: trigger_type `{fm['trigger_type']}` is not a valid value "
             f"({sorted(VALID_TRIGGER_TYPES)})"
         )
 
     if "domain" in fm and fm["domain"] not in VALID_DOMAINS:
         errors.append(
-            f"{entry_path.name}: domain `{fm['domain']}` 唔係有效值 "
+            f"{entry_path.name}: domain `{fm['domain']}` is not a valid value "
             f"({sorted(VALID_DOMAINS)})"
         )
 
@@ -121,7 +121,7 @@ def validate_seed_package(package_path):
     """校驗整個 Seed Package。回傳 overall ok。"""
     pkg = Path(package_path)
     if not pkg.is_dir():
-        print(f"❌ 路徑唔係目錄: {pkg}")
+        print(f"❌ Path is not a directory: {pkg}")
         return False
 
     manifest_file = pkg / "manifest.json"
@@ -131,31 +131,31 @@ def validate_seed_package(package_path):
 
     # --- 1. manifest.json ---
     if not manifest_file.exists():
-        print(f"❌ 缺少 manifest.json")
+        print(f"❌ Missing manifest.json")
         all_ok = False
     else:
         try:
             manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
             validate(instance=manifest, schema=MANIFEST_SCHEMA)
-            print(f"✅ manifest.json 通過 JSON Schema 校驗")
+            print(f"✅ manifest.json passed JSON Schema validation")
         except json.JSONDecodeError as e:
-            print(f"❌ manifest.json JSON 解析失敗: {e}")
+            print(f"❌ manifest.json JSON parse failed: {e}")
             all_ok = False
         except ValidationError as e:
-            print(f"❌ manifest.json 唔符合 schema: {e.message} (path: {list(e.absolute_path)})")
+            print(f"❌ manifest.json does not match schema: {e.message} (path: {list(e.absolute_path)})")
             all_ok = False
 
     # --- 2. entries/ ---
     if not entries_dir.is_dir():
-        print(f"❌ 缺少 entries/ 目錄")
+        print(f"❌ Missing entries/ directory")
         all_ok = False
     else:
         entry_files = sorted(entries_dir.glob("entry_*.md"))
         if not entry_files:
-            print(f"❌ entries/ 入面無 entry_*.md 檔案")
+            print(f"❌ No entry_*.md files in entries/")
             all_ok = False
         else:
-            print(f"🔍 校驗 {len(entry_files)} 個 entry ...")
+            print(f"🔍 Validating {len(entry_files)} entry file(s) ...")
             for ef in entry_files:
                 ok, errs = validate_entry(ef)
                 if ok:
@@ -171,23 +171,23 @@ def validate_seed_package(package_path):
                     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
                     if manifest.get("total_entries") != len(entry_files):
                         print(
-                            f"❌ 數量唔一致: manifest.total_entries="
-                            f"{manifest.get('total_entries')} vs 實際 entry 數={len(entry_files)}"
+                            f"❌ Count mismatch: manifest.total_entries="
+                            f"{manifest.get('total_entries')} vs actual entry count={len(entry_files)}"
                         )
                         all_ok = False
                 except json.JSONDecodeError:
                     pass  # 上面已報錯
 
     print()
-    print("✅ 校驗通過！" if all_ok else "❌ 校驗失敗，請修正上述問題。")
+    print("✅ Validation passed!" if all_ok else "❌ Validation failed, please fix the issues above.")
     return all_ok
 
 
 def main():
-    parser = argparse.ArgumentParser(description="校驗 Seed Package")
+    parser = argparse.ArgumentParser(description="Validate a Seed Package")
     parser.add_argument(
         "--path", required=True,
-        help="Seed Package 目錄路徑（例如 seed_output/seed_goldman_20260725/）"
+        help="Seed Package directory path (e.g. seed_output/seed_goldman_20260725/)"
     )
     args = parser.parse_args()
 

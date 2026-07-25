@@ -28,21 +28,21 @@ def _detect_contributor(package_dir: Path) -> str:
 def cmd_publish(args) -> int:
     package_dir = Path(args.package)
     if not package_dir.is_dir():
-        print(f"❌ 唔係目錄：{package_dir}", file=sys.stderr)
+        print(f"❌ Not a directory: {package_dir}", file=sys.stderr)
         return 1
 
     client = make_client(mock=args.mock)
     if not args.mock and not client.is_available():
         print(
-            f"❌ Kubo daemon 唔可用（{client.api_url}）。\n"
-            "   裝 kubo 後跑 `ipfs daemon`，或用 --mock 測試。",
+            f"❌ Kubo daemon is unavailable ({client.api_url}).\n"
+            "   Install kubo and run `ipfs daemon`, or test with --mock.",
             file=sys.stderr,
         )
         return 1
 
     files = SeedPackagePackager.serialize(package_dir)
     if not files:
-        print(f"❌ Package 目錄空：{package_dir}", file=sys.stderr)
+        print(f"❌ Package directory is empty: {package_dir}", file=sys.stderr)
         return 1
 
     cid = client.publish(files)
@@ -63,16 +63,16 @@ def cmd_publish(args) -> int:
     print(f"   Files:       {len(files)}")
     print(f"   Registry:    {args.registry}")
     if args.mock:
-        print(f"   ⚠️  Mock mode —— CID 係本地模擬，唔係真 IPFS")
+        print(f"   ⚠️  Mock mode — CID is a local simulation, not real IPFS")
     else:
-        print(f"   分享俾其他人：python -m p2p_exchange resolve --cid {cid}")
+        print(f"   Share with others: python -m p2p_exchange resolve --cid {cid}")
     return 0
 
 
 def cmd_verify(args) -> int:
     package_dir = Path(args.package)
     if not package_dir.is_dir():
-        print(f"❌ 唔係目錄：{package_dir}", file=sys.stderr)
+        print(f"❌ Not a directory: {package_dir}", file=sys.stderr)
         return 1
 
     result = verify_package(package_dir, args.cid)
@@ -84,8 +84,8 @@ def cmd_resolve(args) -> int:
     client = make_client(mock=args.mock)
     if not args.mock and not client.is_available():
         print(
-            f"❌ Kubo daemon 唔可用（{client.api_url}）。\n"
-            "   或用 --mock 由本地 mock store resolve。",
+            f"❌ Kubo daemon is unavailable ({client.api_url}).\n"
+            "   Or use --mock to resolve from the local mock store.",
             file=sys.stderr,
         )
         return 1
@@ -100,16 +100,16 @@ def cmd_resolve(args) -> int:
     SeedPackagePackager.deserialize(files, out_dir)
     print(f"✅ Resolved CID: {args.cid}")
     print(f"   → {out_dir}")
-    print(f"   {len(files)} 個 file 重建完成")
+    print(f"   {len(files)} file(s) rebuilt")
     return 0
 
 
 def cmd_list(args) -> int:
     entries = load_registry(Path(args.registry))
     if not entries:
-        print(f"（registry 空：{args.registry}）")
+        print(f"(registry is empty: {args.registry})")
         return 0
-    print(f"📜 Registry ({args.registry}) — {len(entries)} 筆：\n")
+    print(f"📜 Registry ({args.registry}) — {len(entries)} entry/entries:\n")
     for e in entries:
         print(f"  {e['cid']}")
         print(f"    package:    {e['package_name']}")
@@ -126,30 +126,30 @@ def main(argv=None) -> int:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    common_mock = dict(action="store_true", help="Mock 模式（唔使 IPFS daemon）")
-    common_registry = dict(default="p2p_registry.json", help="Registry 檔案路徑")
+    common_mock = dict(action="store_true", help="Mock mode (no IPFS daemon needed)")
+    common_registry = dict(default="p2p_registry.json", help="Registry file path")
 
-    p_pub = sub.add_parser("publish", help="發佈 Seed Package → CID")
-    p_pub.add_argument("--package", required=True, help="Seed Package 目錄")
+    p_pub = sub.add_parser("publish", help="Publish a Seed Package → CID")
+    p_pub.add_argument("--package", required=True, help="Seed Package directory")
     p_pub.add_argument("--mock", **common_mock)
     p_pub.add_argument("--registry", **common_registry)
     p_pub.set_defaults(func=cmd_publish)
 
-    p_ver = sub.add_parser("verify", help="驗證 package 內容同 CID 一致")
-    p_ver.add_argument("--package", required=True, help="Seed Package 目錄")
-    p_ver.add_argument("--cid", required=True, help="預期嘅 CID")
+    p_ver = sub.add_parser("verify", help="Verify package content matches the CID")
+    p_ver.add_argument("--package", required=True, help="Seed Package directory")
+    p_ver.add_argument("--cid", required=True, help="Expected CID")
     p_ver.add_argument("--mock", **common_mock)
     p_ver.add_argument("--registry", **common_registry)
     p_ver.set_defaults(func=cmd_verify)
 
-    p_res = sub.add_parser("resolve", help="用 CID 拉 package")
-    p_res.add_argument("--cid", required=True, help="要 resolve 嘅 CID")
-    p_res.add_argument("--out", required=True, help="輸出目錄")
+    p_res = sub.add_parser("resolve", help="Pull a package by CID")
+    p_res.add_argument("--cid", required=True, help="CID to resolve")
+    p_res.add_argument("--out", required=True, help="Output directory")
     p_res.add_argument("--mock", **common_mock)
     p_res.add_argument("--registry", **common_registry)
     p_res.set_defaults(func=cmd_resolve)
 
-    p_list = sub.add_parser("list", help="列本地 registry")
+    p_list = sub.add_parser("list", help="List the local registry")
     p_list.add_argument("--registry", **common_registry)
     p_list.set_defaults(func=cmd_list)
 

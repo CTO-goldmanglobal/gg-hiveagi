@@ -31,7 +31,7 @@ def _ensure_model() -> Path:
     if MODEL_CACHE.exists():
         return MODEL_CACHE
     MODEL_CACHE.parent.mkdir(parents=True, exist_ok=True)
-    print(f"⬇️  下載 face detection model → {MODEL_CACHE}（首次，一次性）", file=sys.stderr)
+    print(f"⬇️  Downloading face detection model → {MODEL_CACHE} (first run, one-time)", file=sys.stderr)
     urllib.request.urlretrieve(MODEL_URL, MODEL_CACHE)
     return MODEL_CACHE
 
@@ -42,9 +42,9 @@ class FaceBlur:
     def __init__(self, blur_strength: int = 51,
                  min_confidence: float = 0.5):
         if blur_strength % 2 == 0:
-            raise ValueError("blur_strength 必須係奇數")
+            raise ValueError("blur_strength must be odd")
         if not 0 <= min_confidence <= 1:
-            raise ValueError("min_confidence 必須喺 0–1 之間")
+            raise ValueError("min_confidence must be between 0 and 1")
         self.blur_strength = blur_strength
         self.min_confidence = min_confidence
 
@@ -57,7 +57,7 @@ class FaceBlur:
 
         image = cv2.imread(str(image_path))
         if image is None:
-            raise FileNotFoundError(f"讀唔到圖片：{image_path}")
+            raise FileNotFoundError(f"Cannot read image: {image_path}")
         h, w = image.shape[:2]
 
         # MediaPipe Tasks 要 mp.Image
@@ -102,7 +102,7 @@ class FaceBlur:
 
         image = cv2.imread(str(input_path))
         if image is None:
-            raise FileNotFoundError(f"讀唔到圖片：{input_path}")
+            raise FileNotFoundError(f"Cannot read image: {input_path}")
 
         for box in boxes:
             x, y, w, h = box["x"], box["y"], box["w"], box["h"]
@@ -121,21 +121,21 @@ class FaceBlur:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="人臉模糊化（MediaPipe Tasks）")
-    parser.add_argument("input", help="輸入圖片路徑")
-    parser.add_argument("--out", help="輸出路徑")
+    parser = argparse.ArgumentParser(description="Face blur (MediaPipe Tasks)")
+    parser.add_argument("input", help="Input image path")
+    parser.add_argument("--out", help="Output path")
     parser.add_argument("--strength", type=int, default=51,
-                        help="Gaussian blur kernel（奇數，預設 51）")
+                        help="Gaussian blur kernel (odd, default 51)")
     parser.add_argument("--report-only", action="store_true",
-                        help="只偵測，唔寫檔")
+                        help="Detect only, do not write file")
     args = parser.parse_args()
 
     fb = FaceBlur(blur_strength=args.strength)
     out, count = fb.process_file(args.input, args.out, report_only=args.report_only)
     if args.report_only:
-        print(f"👁️  偵測到 {count} 個人臉（只偵測）")
+        print(f"👁️  Detected {count} face(s) (report only)")
     else:
-        print(f"✅ 模糊咗 {count} 個人臉 → {out}")
+        print(f"✅ Blurred {count} face(s) → {out}")
     return 0
 
 

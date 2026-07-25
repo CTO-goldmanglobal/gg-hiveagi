@@ -1,15 +1,15 @@
 # LLM Wiki Engine — Project Hive.AGI P1
 
-將 Raw Data（硬件 / App 採集）轉為結構化 Wiki Entry，經 Dual-LLM 審計後自動入庫。
+Converts Raw Data (collected by hardware / app) into structured Wiki Entries, which are automatically committed after Dual-LLM auditing.
 
-## 架構
+## Architecture
 
 ```
 Raw Data (JSON)
     │
     ▼
 ┌───────────────────┐
-│   PII Stripping   │   文字 regex 脫敏（圖片 stub，P1.5 接 MediaPipe）
+│   PII Stripping   │   Text regex desensitization (image stub, P1.5 connects MediaPipe)
 └─────────┬─────────┘
           ▼
 ┌───────────────────┐
@@ -21,24 +21,24 @@ Raw Data (JSON)
 └─────────┬─────────┘   temperature 0.0 (deterministic)
           │
     ┌─────┴──────┬──────────────┐
-   pass      fail+corrected   fail 無corrected
+   pass      fail+corrected   fail without corrected
     │            │                │
-    │     自動修正入庫          重試（temp +0.1）×2
-    │     (audited: corrected)     │
-    │                           仍 fail → quarantine/
+    │     auto-corrected,         retry (temp +0.1) ×2
+    │     committed                  │
+    │     (audited: corrected)    still fails → quarantine/
     ▼
-Final Entry (.md)  ←  格式對齊 P0 generate_seed.py（可用 validate_seed.py 校驗）
+Final Entry (.md)  ←  format aligned with P0 generate_seed.py (validatable with validate_seed.py)
 ```
 
-## 安裝
+## Installation
 
 ```bash
 pip install -r llm_wiki_engine/requirements.txt
 ```
 
-## 用法
+## Usage
 
-### Mock 模式（唔使 API key，用嚟測試 pipeline）
+### Mock Mode (no API key needed, for testing the pipeline)
 
 ```bash
 python -m llm_wiki_engine process \
@@ -47,14 +47,14 @@ python -m llm_wiki_engine process \
     --mock
 ```
 
-### 測試三個 audit 分支（mock）
+### Testing the Three Audit Branches (mock)
 
 ```bash
 # pass
 python -m llm_wiki_engine process --inbox llm_wiki_engine/test_samples \
     --entries /tmp/t_pass --mock --audit-fail-mode pass
 
-# corrected（自動修正入庫）
+# corrected (auto-corrected and committed)
 python -m llm_wiki_engine process --inbox llm_wiki_engine/test_samples \
     --entries /tmp/t_corr --mock --audit-fail-mode corrected
 
@@ -63,14 +63,14 @@ python -m llm_wiki_engine process --inbox llm_wiki_engine/test_samples \
     --entries /tmp/t_quar --quarantine /tmp/q --mock --audit-fail-mode quarantine
 ```
 
-### 真實模式（需要 API key）
+### Real Mode (requires API key)
 
-1. 複製 `.env.example` 到 project root 做 `.env`，填入真 key：
+1. Copy `.env.example` to the project root as `.env`, and fill in the real key:
    ```bash
    cp llm_wiki_engine/.env.example .env
    ```
 
-2. 跑（唔加 `--mock`）：
+2. Run (without `--mock`):
    ```bash
    python -m llm_wiki_engine process \
        --inbox ./inbox \
@@ -78,32 +78,32 @@ python -m llm_wiki_engine process --inbox llm_wiki_engine/test_samples \
        --quarantine ./quarantine
    ```
 
-### 單筆處理
+### Single Entry Processing
 
 ```bash
 python -m llm_wiki_engine process-one \
     --input raw.json --output entry.md --mock
 ```
 
-## 跨工具兼容
+## Cross-Tool Compatibility
 
-P1 產出嘅 `.md` 與 P0 `generate_seed.py` 格式 1:1 對齊，可用 P0 validator 校驗：
+The `.md` output produced by P1 is 1:1 aligned with the format of the P0 `generate_seed.py`, and can be validated with the P0 validator:
 
 ```bash
 python tools/seed_generator/validate_seed.py --path /tmp/test_entries/
 ```
 
-## 設計重點
+## Design Highlights
 
-- **Dual-LLM 分工**：generator（MiniMax M3）同 auditor（DeepSeek V4 Flash）分離，
-  生成同審查唔係同一個 model，避免 self-confirmation bias。
-- **Mock / Real 抽象**：`LLMClient` 介面統一，Mock 行晒成個 pipeline + 三個 audit 分支，
-  接 API key 後零 orchestration 改動。
-- **自動修正政策**（spec §5）：fail + corrected → 自動入庫 + `<!-- audit_log -->`；
-  fail 無 corrected → retry 2 次（temp +0.1）→ quarantine。
-- **Pydantic v2 strict parse**：所有 LLM JSON output 過 strict schema，捕捉漏欄 / 類型錯 / 幻覺。
+- **Dual-LLM division of labor**: the generator (MiniMax M3) and the auditor (DeepSeek V4 Flash) are separate,
+  so generation and review are not the same model, avoiding self-confirmation bias.
+- **Mock / Real abstraction**: a unified `LLMClient` interface; Mock exercises the full pipeline + the three audit branches,
+  and switching in an API key requires zero orchestration changes.
+- **Auto-correction policy** (spec §5): fail + corrected → auto-commit + `<!-- audit_log -->`;
+  fail without corrected → retry 2 times (temp +0.1) → quarantine.
+- **Pydantic v2 strict parse**: all LLM JSON output passes a strict schema, catching missing fields / type errors / hallucinations.
 
-## 檔案結構
+## File Structure
 
 ```
 llm_wiki_engine/
@@ -115,12 +115,12 @@ llm_wiki_engine/
 ├── client.py           # LLMClient ABC + RealLLMClient + MockLLMClient
 ├── generator.py        # MiniMax M3 wrapper
 ├── auditor.py          # DeepSeek V4 Flash wrapper
-├── engine.py           # orchestrator（retry / auto-correct / quarantine）
+├── engine.py           # orchestrator (retry / auto-correct / quarantine)
 ├── pii.py              # text PII regex strip
 ├── prompts/
 │   ├── generator_system.txt
 │   └── auditor_system.txt
-├── test_samples/       # 3 個 sample JSON（含 quarantine 觸發用）
+├── test_samples/       # 3 sample JSONs (including one to trigger quarantine)
 ├── .env.example
 ├── requirements.txt
 └── README.md
@@ -128,4 +128,4 @@ llm_wiki_engine/
 
 ## License
 
-AGPL-3.0（同 Project Hive.AGI 主項目一致）。
+AGPL-3.0 (consistent with the main Project Hive.AGI project).

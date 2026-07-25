@@ -52,13 +52,13 @@ class WikiGenerator:
         try:
             data = extract_json(response)
             if data is None:
-                raise ValueError("搵唔到有效 JSON object")
+                raise ValueError("No valid JSON object found")
         except (json.JSONDecodeError, ValueError) as e:
             raise ValueError(
-                f"Generator 返回嘅 JSON 無效: {e}\nRaw: {response[:200]}"
+                f"Generator returned invalid JSON: {e}\nRaw: {response[:200]}"
             ) from e
 
         try:
             return DraftEntry(**data)
         except ValidationError as e:
-            raise ValueError(f"Generator output 唔符合 DraftEntry schema: {e}") from e
+            raise ValueError(f"Generator output does not match DraftEntry schema: {e}") from e
