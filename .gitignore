@@ -41,5 +41,10 @@ seed_output/
 *.bak
 *.orig
 
+# Secrets / credentials — NEVER commit
+.env
+.env.*
+!.env.example
+
 # ZCode / agent internal artifacts
 .zcode/
