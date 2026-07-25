@@ -1,0 +1,42 @@
+# Dependabot — keeps Python dependencies up to date + security alerts
+# Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+
+version: 2
+updates:
+  # P1 — LLM Wiki Engine
+  - package-ecosystem: "pip"
+    directory: "/llm_wiki_engine"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "p1-llm-engine"
+    commit-message:
+      prefix: "deps(p1)"
+
+  # P0 — Seed Generator
+  - package-ecosystem: "pip"
+    directory: "/tools/seed_generator"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "p0-seed-gen"
+    commit-message:
+      prefix: "deps(p0)"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "deps(ci)"
