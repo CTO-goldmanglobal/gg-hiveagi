@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke-test:
+    name: P0 + P1 Mock Smoke Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tools/seed_generator/requirements.txt
+          pip install -r llm_wiki_engine/requirements.txt
+
+      - name: P0 — Seed Generator
+        run: python tools/seed_generator/generate_seed.py
+
+      - name: P0 — Seed Validator
+        run: |
+          python tools/seed_generator/validate_seed.py \
+            --path seed_output/seed_goldman_20260725/
+
+      - name: P1 — LLM Wiki Engine (mock, all 3 audit branches)
+        env:
+          # Explicitly empty — mock mode needs no keys
+          MINIMAX_API_KEY: ""
+          DEEPSEEK_API_KEY: ""
+        run: |
+          set -e
+          # pass branch
+          python -m llm_wiki_engine process \
+            --inbox llm_wiki_engine/test_samples \
+            --entries /tmp/ci_pass \
+            --mock --audit-fail-mode pass
+
+          # corrected branch
+          python -m llm_wiki_engine process \
+            --inbox llm_wiki_engine/test_samples \
+            --entries /tmp/ci_corr \
+            --mock --audit-fail-mode corrected
+
+          # quarantine branch (exits 0 even when all quarantine)
+          python -m llm_wiki_engine process \
+            --inbox llm_wiki_engine/test_samples \
+            --entries /tmp/ci_quar \
+            --quarantine /tmp/ci_q \
+            --mock --audit-fail-mode quarantine
+
+      - name: Cross-compat — P0 validator on P1 output (pass branch)
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "tools/seed_generator")
+          from validate_seed import validate_entry
+
+          failures = 0
+          for md in sorted(Path("/tmp/ci_pass").glob("*.md")):
+              ok, errs = validate_entry(md)
+              if not ok:
+                  failures += 1
+                  print(f"FAIL {md.name}: {errs}")
+          if failures:
+              sys.exit(f"{failures} entries failed P0 validation")
+          print("All P1 entries passed P0 validation")
+          PY
+
+      - name: Cross-compat — P0 validator on P1 output (corrected branch)
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "tools/seed_generator")
+          from validate_seed import validate_entry
+
+          failures = 0
+          for md in sorted(Path("/tmp/ci_corr").glob("*.md")):
+              ok, errs = validate_entry(md)
+              if not ok:
+                  failures += 1
+                  print(f"FAIL {md.name}: {errs}")
+          if failures:
+              sys.exit(f"{failures} entries failed P0 validation")
+          print("All corrected P1 entries passed P0 validation")
+          PY
