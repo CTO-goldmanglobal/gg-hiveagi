@@ -55,31 +55,39 @@
 
 ```python
 from openai import OpenAI
+import os
 
 generator = OpenAI(
-    api_key="<MINIMAX_API_KEY>",          # 由 MiniMax platform 拎
-    base_url="https://api.minimax.io/v1",
+    api_key=os.environ["MINIMAX_API_KEY"],     # 由 MiniMax platform 拎
+    base_url="https://api.minimax.io/v1",       # 確認 2026-06
 )
 # model = "MiniMax-M3"
+# GroupId（MINIMAX_GROUP_ID）：喺 platform 註冊帳號時拎到，
+#   某啲 legacy / management endpoint 會用到；chat/completions 唔一定要傳。
+#   仍屬帳號識別碼 → 放 .env，唔好 commit。
 ```
 
 ### Auditor (DeepSeek V4 Flash)
 
 ```python
 auditor = OpenAI(
-    api_key="<DEEPSEEK_API_KEY>",         # 由 DeepSeek platform 拎
-    base_url="https://api.deepseek.com",
+    api_key=os.environ["DEEPSEEK_API_KEY"],    # 由 DeepSeek platform 拎
+    base_url="https://api.deepseek.com/v1",     # 確認 2026-06
 )
 # model = "deepseek-v4-flash"
 ```
 
-**API key 管理**：放 `.env`，唔好入 git（`.gitignore` 已含 `.env`）。
+**Credentials 管理**：全部放 `.env`，唔好入 git（`.gitignore` 已含 `.env`）。
 
 ```bash
 # .env (唔 commit)
 MINIMAX_API_KEY=...
+MINIMAX_GROUP_ID=...
 DEEPSEEK_API_KEY=...
 ```
+
+> 🔒 **點解 GroupId 都放 .env？** 佢本身唔係 secret（單獨唔能登入），但係帳號識別碼。
+> Public repo 嘅良好慣例：帳號識別碼同 credential 一齊放 env，避免喺 code/spec 度暴露你嘅帳號。
 
 ---
 
