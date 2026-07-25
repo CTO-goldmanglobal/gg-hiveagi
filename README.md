@@ -4,6 +4,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Data License: CC BY-NC-SA 4.0](https://img.shields.io/badge/Data%20License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![CI](https://github.com/CTO-goldmanglobal/gg-hiveagi/actions/workflows/ci.yml/badge.svg)](https://github.com/CTO-goldmanglobal/gg-hiveagi/actions/workflows/ci.yml)
 
 ---
 
@@ -30,10 +31,33 @@ cd gg-hiveagi
 ### 2. 安裝依賴
 
 ```bash
+# P0 (seed generator + validator)
 pip install -r tools/seed_generator/requirements.txt
+
+# P1 (llm_wiki_engine)
+pip install -r llm_wiki_engine/requirements.txt
 ```
 
-### 3. 生成第一個 Seed Package
+### 3. 設定 LLM Credentials（P1 真實模式先需要）
+
+P1 嘅 LLM Wiki Engine 預設用 mock 模式（唔使 key）。
+要用真嘅 MiniMax / DeepSeek API，就整 `.env`：
+
+```bash
+cp llm_wiki_engine/.env.example .env
+# 然後用編輯器填入真 key（唔好 paste 入 chat / commit）
+```
+
+需要嘅 key（見 `specs/api-protocol-v1.md`）：
+
+| 變數 | 用途 |
+| :--- | :--- |
+| `MINIMAX_API_KEY` | Generator（MiniMax M3） |
+| `DEEPSEEK_API_KEY` | Auditor（DeepSeek V4 Flash） |
+
+`.env` 已經喺 `.gitignore`，唔會 commit。
+
+### 4. 生成第一個 Seed Package（P0）
 
 ```bash
 python tools/seed_generator/generate_seed.py
@@ -44,11 +68,22 @@ python tools/seed_generator/generate_seed.py
 - `entries/entry_001.md` — 標準化 Markdown 筆記
 - `README.md` — 使用說明
 
-### 4. 校驗 Seed Package
+### 5. 校驗 Seed Package（P0）
 
 ```bash
 python tools/seed_generator/validate_seed.py --path seed_output/seed_goldman_20260725/
 ```
+
+### 6. LLM Wiki Engine（P1，mock 模式）
+
+```bash
+python -m llm_wiki_engine process \
+    --inbox llm_wiki_engine/test_samples \
+    --entries /tmp/test_entries \
+    --mock
+```
+
+填咗 `.env` 之後，去掉 `--mock` 就用真 MiniMax + DeepSeek API。詳見 [`llm_wiki_engine/README.md`](./llm_wiki_engine/README.md)。
 
 ---
 
