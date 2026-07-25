@@ -122,12 +122,16 @@ class KuboP2PClient(P2PClient):
         """
         Publish 成 directory（保留結構），用 multipart/form-data。
         kubo 會自己計真 CID（dag-pb / UnixFS）。
+
+        用 wrap-with-directory=true：kubo 會自動將所有上傳嘅 file 包成
+        一個 root directory，root 嘅 Name 係 ""。每個 file 嘅 filename
+        用相對路徑（例如 entries/entry_001.md）以保留子目錄結構。
         """
         boundary = "hiveagi-boundary-" + os.urandom(8).hex()
         body = self._build_multipart(files, boundary)
 
         req = urllib.request.Request(
-            f"{self.api_base}/add?pin=true&recursive=true",
+            f"{self.api_base}/add?pin=true&recursive=true&wrap-with-directory=true",
             data=body,
             method="POST",
         )
@@ -154,25 +158,35 @@ class KuboP2PClient(P2PClient):
         return root
 
     def resolve(self, cid: str) -> List[Tuple[str, bytes]]:
-        """用 `ipfs ls` 列出 dir 內容，再逐個 `cat`。"""
-        # 1. ls 拎 file list
+        """用 `ipfs ls` 列出 dir 內容（遞迴處理子目錄），再逐個 `cat`。"""
+        return self._ls_recursive(cid, prefix="")
+
+    def _ls_recursive(self, cid: str, prefix: str) -> List[Tuple[str, bytes]]:
+        """遞迴 walk 一個 IPFS directory，返回所有 file。"""
         req = urllib.request.Request(
             f"{self.api_base}/ls?arg={cid}", method="POST"
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
             ls_data = json.loads(resp.read().decode("utf-8"))
 
-        files: List[Tuple[str, bytes]] = []
         objects = ls_data.get("Objects", [])
         if not objects:
             raise RuntimeError(f"kubo /ls 回空：{ls_data}")
+
+        files: List[Tuple[str, bytes]] = []
         for link in objects[0].get("Links", []):
             name = link.get("Name", "")
             if not name:
                 continue
             sub_cid = link["Hash"]
-            content = self._cat(sub_cid)
-            files.append((name, content))
+            rel_path = f"{prefix}/{name}" if prefix else name
+            # Type: 1 = directory, 2 = file（kubo UnixFS）
+            if link.get("Type") == 1:
+                # 遞迴入子目錄
+                files.extend(self._ls_recursive(sub_cid, rel_path))
+            else:
+                content = self._cat(sub_cid)
+                files.append((rel_path, content))
         return files
 
     def _cat(self, cid: str) -> bytes:
@@ -184,12 +198,18 @@ class KuboP2PClient(P2PClient):
 
     @staticmethod
     def _build_multipart(files: List[Tuple[str, bytes]], boundary: str) -> bytes:
-        """手工 multipart/form-data（stdlib 冇簡單 API）。"""
+        """
+        手工 multipart/form-data（stdlib 冇簡單 API）。
+
+        filename 用相對路徑（例如 entries/entry_001.md）—— 配合
+        wrap-with-directory=true，kubo 會保留子目錄結構。
+        """
         parts = []
         for rel_path, content in files:
             parts.append(f"--{boundary}\r\n".encode("utf-8"))
+            # filename 用相對路徑（無 leading /），令 wrap 出嚟嘅 dir 結構正確
             parts.append(
-                f'Content-Disposition: form-data; name="file"; filename="/{rel_path}"\r\n'
+                f'Content-Disposition: form-data; name="file"; filename="{rel_path}"\r\n'
                 .encode("utf-8")
             )
             parts.append(b"Content-Type: application/octet-stream\r\n\r\n")
