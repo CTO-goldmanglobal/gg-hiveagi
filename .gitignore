@@ -50,6 +50,10 @@ seed_output/
 p2p_registry.json
 p2p_registry.*.json
 
+# Local LLM run output (real-mode test results — not for the repo)
+real_entries/
+real_quarantine/
+
 # Obsidian plugin build artifacts / deps
 obsidian_plugin/node_modules/
 obsidian_plugin/main.js

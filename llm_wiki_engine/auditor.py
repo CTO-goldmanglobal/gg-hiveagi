@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from .client import LLMClient
+from .llm_json import extract_json
 from .models import RawData, DraftEntry, AuditResult
 
 
@@ -58,9 +59,13 @@ class WikiAuditor:
         )
 
         try:
-            data = json.loads(response)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Auditor 返回嘅 JSON 無效: {e}\nRaw: {response[:200]}") from e
+            data = extract_json(response)
+            if data is None:
+                raise ValueError("搵唔到有效 JSON object")
+        except (json.JSONDecodeError, ValueError) as e:
+            raise ValueError(
+                f"Auditor 返回嘅 JSON 無效: {e}\nRaw: {response[:200]}"
+            ) from e
 
         verdict = data.get("verdict", "fail")
         issues = data.get("issues", []) or []
