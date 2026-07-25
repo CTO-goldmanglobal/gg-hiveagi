@@ -59,7 +59,7 @@ python tools/seed_generator/validate_seed.py --path seed_output/seed_goldman_202
 | `PROJECT_MASTER_PLAN.md` | 完整計劃書（由願景到 Code） |
 | `specs/seed-package-schema-v1.md` | Seed Package JSON / Markdown 格式規範 |
 | `specs/vault-structure-spec.md` | Obsidian Vault 目錄結構與命名規範 |
-| `specs/api-protocol-v1.md` | P1 LLM Wiki Engine API 設計（OpenAI-compatible） |
+| `specs/api-protocol-v1.md` | P1 LLM Wiki Engine API 設計（MiniMax M3 generator + DeepSeek V4 Flash auditor） |
 
 ---
 
@@ -69,7 +69,7 @@ python tools/seed_generator/validate_seed.py --path seed_output/seed_goldman_202
 | :--- | :--- | :--- |
 | **P0** | Seed Generator + Validator + Vault Setup | ✅ 已完成 |
 | **P0** | Specs (Schema / Vault / API) | ✅ 已完成 |
-| **P1** | LLM Wiki Engine (API-based, OpenAI-compatible) | 🚧 規劃中 |
+| **P1** | LLM Wiki Engine (MiniMax M3 + DeepSeek V4 Flash dual-LLM) | 🚧 規劃中 |
 | **P1** | Mobile Capture App (Basic) | 📋 規劃中 |
 | **P2** | P2P Exchange (IPFS / libp2p) | 📋 規劃中 |
 | **P2** | Obsidian Plugin | 📋 規劃中 |

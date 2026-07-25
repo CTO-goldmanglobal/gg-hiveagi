@@ -31,7 +31,7 @@
 
 - **Capture 層**：AI glasses / 手機 / 工業感應器採集「人類視角數據」（人在呢一刻覺得重要 / 靚 / 異常嘅瞬間）。
 - **Wiki 層**：Obsidian Vault + 雙向鏈接，將 Raw Data 沉澱為結構化 Markdown 知識。
-- **LLM 層**：API-based（OpenAI-compatible endpoint），將 Raw Data 自動轉化為標準化筆記 + 自動生成雙向鏈接。唔用 local Llama，改用 API 提供彈性。
+- **LLM 層**：Dual-LLM API 架構 —— **MiniMax M3**（generator，主力產出 wiki entry）+ **DeepSeek V4 Flash**（auditor，自動審查 + 修正 hallucination / schema 違規）。兩者皆 OpenAI-compatible。唔用 local Llama。詳見 `specs/api-protocol-v1.md`。
 - **P2P 層**：Seed Package（標準化知識包）透過 IPFS / libp2p 喺貢獻者之間交換。
 
 ---
