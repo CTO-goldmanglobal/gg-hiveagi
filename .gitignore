@@ -54,6 +54,10 @@ p2p_registry.*.json
 real_entries/
 real_quarantine/
 
+# Auto-downloaded ML models (face detection .tflite etc.)
+~/.hiveagi_models/
+**/_anon/
+
 # Obsidian plugin build artifacts / deps
 obsidian_plugin/node_modules/
 obsidian_plugin/main.js

@@ -112,6 +112,66 @@ def _run_preflight(args) -> int:
     return run_preflight(quick=args.quick)
 
 
+def cmd_process_video(args) -> int:
+    """Path 2: 對一個 frames 目錄逐個跑 vision → 寫 RawData JSON 去 inbox。"""
+    from pathlib import Path
+    from datetime import datetime, timezone
+    from .vision import process_frame, SafetyError
+
+    frames_dir = Path(args.frames)
+    inbox_dir = Path(args.inbox)
+    inbox_dir.mkdir(parents=True, exist_ok=True)
+
+    if not frames_dir.is_dir():
+        print(f"❌ frames 目錄唔存在：{frames_dir}", file=sys.stderr)
+        return 1
+
+    config = load_config(mock_mode=False)  # vision 一定要 real mode
+
+    frame_files = sorted(
+        p for p in frames_dir.iterdir()
+        if p.is_file() and p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")
+    )
+    if not frame_files:
+        print(f"⚠️  {frames_dir} 入面冇圖片", file=sys.stderr)
+        return 1
+
+    print(f"🔎 Vision processing {len(frame_files)} 個 frame ...")
+    ok, fail = 0, 0
+    for i, frame in enumerate(frame_files, 1):
+        print(f"  [{i}/{len(frame_files)}] {frame.name}")
+        try:
+            raw = process_frame(
+                str(frame), config,
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                location_hint=args.location or "",
+                participant_description="",
+            )
+            # 寫 RawData JSON 去 inbox
+            out = inbox_dir / f"{frame.stem}.json"
+            payload = raw.model_dump()
+            # 保留 vision extra（ai_analysis 等）
+            extra = getattr(raw, "_vision_extra", None)
+            if extra:
+                payload["_vision_extra"] = extra
+            out.write_text(
+                __import__("json").dumps(payload, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            print(f"      ✅ → {out.name}")
+            ok += 1
+        except SafetyError as e:
+            print(f"      🚫 SAFETY: {e}")
+            fail += 1
+        except Exception as e:  # noqa: BLE001
+            print(f"      ❌ {type(e).__name__}: {e}")
+            fail += 1
+
+    print(f"\n✅ Vision done: {ok} 成功, {fail} 失敗")
+    print(f"下一步：python -m llm_wiki_engine process --inbox {inbox_dir} --entries ...")
+    return 0 if fail == 0 else 1
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="llm_wiki_engine",
@@ -155,6 +215,16 @@ def main(argv=None) -> int:
         default=None,
     )
     p_one.set_defaults(func=cmd_process_one)
+
+    # process-video (Path 2: auto-vision with enforced PII blur)
+    p_vid = subparsers.add_parser(
+        "process-video",
+        help="Auto-vision: frames → blur → MiniMax M3 → RawData JSON（需 real mode + PII deps）"
+    )
+    p_vid.add_argument("--frames", required=True, help="Frame 圖片目錄")
+    p_vid.add_argument("--inbox", required=True, help="RawData JSON 輸出目錄")
+    p_vid.add_argument("--location", default="", help="地點提示（例如 Sydney Harbour）")
+    p_vid.set_defaults(func=cmd_process_video)
 
     args = parser.parse_args(argv)
 

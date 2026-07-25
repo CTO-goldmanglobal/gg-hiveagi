@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-07-26T12:00:00Z",
+  "gps": { "lat": -33.8568, "lng": 151.2153 },
+  "trigger_type": "aesthetic_gaze",
+  "domain": "tourism",
+  "human_description": "（呢度寫你嘅人類視角描述，廣東話/英文都得）",
+  "human_label": "靚",
+  "tags": ["sunset", "harbour"],
+  "source_video": "street_walk_001.mp4",
+  "source_video_time": "00:01:23",
+  "location_label": "SydneyHarbour"
+}

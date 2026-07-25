@@ -85,6 +85,25 @@ python -m llm_wiki_engine process \
 
 填咗 `.env` 之後，去掉 `--mock` 就用真 MiniMax + DeepSeek API。詳見 [`llm_wiki_engine/README.md`](./llm_wiki_engine/README.md)。
 
+### 7. 由 video 採集 RawData（兩條 path）
+
+```bash
+# Path 1（推薦，零 PII 風險）：人手 curate
+python tools/video_ingest/extract_frames.py video.mp4 --at 00:01:23 --out frames/
+python tools/video_ingest/capture_helper.py --video video.mp4 --inbox ./00_Inbox
+python -m llm_wiki_engine process --inbox ./00_Inbox --entries ./01_Entries
+
+# Path 2（auto-vision，強制 PII blur）
+python tools/video_ingest/extract_frames.py video.mp4 --every 30 --out frames/
+python -m llm_wiki_engine process-video --frames frames/ --inbox ./00_Inbox --location Sydney
+python -m llm_wiki_engine process --inbox ./00_Inbox --entries ./01_Entries
+```
+
+詳見 [`tools/video_ingest/README.md`](./tools/video_ingest/README.md)。
+
+> 🔒 **Safety gate**：auto-vision path **必須**先過人臉 + 車牌 blur（MediaPipe + OpenCV），
+> 先可以送 LLM。冇 `--skip-blur`。blur 失敗 → 拒絕送 LLM（spec §6 鐵律，code-enforced）。
+
 ---
 
 ## 📂 核心規範文件

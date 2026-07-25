@@ -1,0 +1,10 @@
+# PII Anonymizer — heavy native deps (optional install)
+#
+# Only needed for the auto-vision path (tools/video_ingest + llm_wiki_engine/vision).
+# The manual capture path (capture_helper.py) stays stdlib-only.
+#
+# Install:
+#   pip install -r tools/pii_anonymizer/requirements.txt
+
+opencv-python>=4.8
+mediapipe>=0.10
