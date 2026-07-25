@@ -97,3 +97,48 @@ jobs:
               sys.exit(f"{failures} entries failed P0 validation")
           print("All corrected P1 entries passed P0 validation")
           PY
+
+      - name: P2 — P2P Exchange (mock publish/verify/tamper/resolve)
+        env:
+          MINIMAX_API_KEY: ""
+          DEEPSEEK_API_KEY: ""
+        run: |
+          set -e
+          # publish -> capture CID
+          CID=$(python -m p2p_exchange publish \
+            --package seed_output/seed_goldman_20260725 \
+            --mock | awk '/^   CID:/ {print $2}')
+          test -n "$CID"
+
+          # verify intact -> must pass
+          python -m p2p_exchange verify \
+            --package seed_output/seed_goldman_20260725 \
+            --cid "$CID" --mock
+
+          # tamper -> verify must FAIL (exit 1)
+          cp -r seed_output/seed_goldman_20260725 /tmp/ci_tampered
+          echo "TAMPER" >> /tmp/ci_tampered/entries/entry_001.md
+          set +e
+          python -m p2p_exchange verify \
+            --package /tmp/ci_tampered --cid "$CID" --mock
+          verify_exit=$?
+          set -e
+          if [ "$verify_exit" -ne 1 ]; then
+            echo "tamper NOT detected (exit=$verify_exit, expected 1)"
+            exit 1
+          fi
+          echo "tamper correctly detected"
+
+          # resolve -> reconstruct
+          python -m p2p_exchange resolve \
+            --cid "$CID" --out /tmp/ci_resolved --mock
+
+          # determinism: re-publish -> same CID
+          CID2=$(python -m p2p_exchange publish \
+            --package seed_output/seed_goldman_20260725 \
+            --mock | awk '/^   CID:/ {print $2}')
+          test "$CID" = "$CID2"
+
+      - name: Cross-compat — P0 validator on P2-resolved package
+        run: |
+          python tools/seed_generator/validate_seed.py --path /tmp/ci_resolved

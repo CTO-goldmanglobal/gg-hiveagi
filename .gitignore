@@ -46,5 +46,9 @@ seed_output/
 .env.*
 !.env.example
 
+# P2 runtime artifacts (local per-node state)
+p2p_registry.json
+p2p_registry.*.json
+
 # ZCode / agent internal artifacts
 .zcode/
