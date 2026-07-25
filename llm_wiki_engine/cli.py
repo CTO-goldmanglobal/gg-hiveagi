@@ -106,12 +106,28 @@ def _build_engine(args) -> WikiEngine:
     )
 
 
+def _run_preflight(args) -> int:
+    # 延遲 import，令 preflight 喺 deps 缺失時仍然可以報告
+    from .preflight import run_preflight
+    return run_preflight(quick=args.quick)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="llm_wiki_engine",
         description="LLM Wiki Engine — 將 Raw Data 轉為結構化 Wiki Entry",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # preflight
+    p_pre = subparsers.add_parser(
+        "preflight", help="檢查 real-mode 依賴（env keys / kubo / MiniMax / DeepSeek）"
+    )
+    p_pre.add_argument(
+        "--quick", action="store_true",
+        help="淨係檢查 env + daemon，唔打真 API",
+    )
+    p_pre.set_defaults(func=lambda a: _run_preflight(a))
 
     # process
     p_proc = subparsers.add_parser("process", help="批量處理 Inbox 目錄")
