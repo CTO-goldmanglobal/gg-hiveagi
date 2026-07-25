@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-07-25T19:30:00Z",
+  "gps": { "lat": -33.8568, "lng": 151.2153 },
+  "trigger_type": "aesthetic_gaze",
+  "domain": "tourism",
+  "human_label": "靚",
+  "human_description": "夕陽穿過貨櫃之間嘅縫隙，形成金色光柱。工業與自然對話嘅感覺。",
+  "tags": ["日落", "貨櫃碼頭", "黃金時刻"]
+}

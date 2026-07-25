@@ -69,7 +69,7 @@ python tools/seed_generator/validate_seed.py --path seed_output/seed_goldman_202
 | :--- | :--- | :--- |
 | **P0** | Seed Generator + Validator + Vault Setup | ✅ 已完成 |
 | **P0** | Specs (Schema / Vault / API) | ✅ 已完成 |
-| **P1** | LLM Wiki Engine (MiniMax M3 + DeepSeek V4 Flash dual-LLM) | 🚧 規劃中 |
+| **P1** | LLM Wiki Engine (MiniMax M3 + DeepSeek V4 Flash dual-LLM) | ✅ 已完成（mock 驗證） |
 | **P1** | Mobile Capture App (Basic) | 📋 規劃中 |
 | **P2** | P2P Exchange (IPFS / libp2p) | 📋 規劃中 |
 | **P2** | Obsidian Plugin | 📋 規劃中 |

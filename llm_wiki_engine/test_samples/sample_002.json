@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-07-25T20:00:00Z",
+  "gps": { "lat": -33.8572, "lng": 151.2145 },
+  "trigger_type": "aesthetic_gaze",
+  "domain": "tourism",
+  "human_label": "靚",
+  "human_description": "歌劇院夜晚燈光倒映喺海面，水面波動令燈光變成碎金。",
+  "tags": ["歌劇院", "夜景", "倒影"]
+}

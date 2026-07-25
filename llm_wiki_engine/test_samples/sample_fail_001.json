@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-07-25T21:00:00Z",
+  "gps": { "lat": -33.8600, "lng": 151.2100 },
+  "trigger_type": "other",
+  "domain": "other",
+  "human_label": "",
+  "human_description": "唔知點解錄咗呢段，好似冇咩特別，純粹測試 quarantine 分支。",
+  "tags": []
+}
