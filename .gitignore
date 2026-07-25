@@ -50,5 +50,11 @@ seed_output/
 p2p_registry.json
 p2p_registry.*.json
 
+# Obsidian plugin build artifacts / deps
+obsidian_plugin/node_modules/
+obsidian_plugin/main.js
+obsidian_plugin/*.js.map
+obsidian_plugin/dist/
+
 # ZCode / agent internal artifacts
 .zcode/

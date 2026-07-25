@@ -1,0 +1,10 @@
+{
+	"id": "hiveagi",
+	"name": "Hive.AGI",
+	"version": "1.0.0",
+	"minAppVersion": "1.4.0",
+	"description": "Capture human-perspective triggers → process via LLM Wiki Engine (P1). File-system handoff to the Python pipeline.",
+	"author": "Goldman Global Research Labs",
+	"authorUrl": "https://goldmanglobal.com.au",
+	"isDesktopOnly": true
+}

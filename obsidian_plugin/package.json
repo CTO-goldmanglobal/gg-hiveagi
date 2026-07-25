@@ -1,0 +1,29 @@
+{
+	"name": "obsidian-hiveagi-plugin",
+	"version": "1.0.0",
+	"description": "Hive.AGI Obsidian plugin — capture + trigger for the Python LLM Wiki Engine",
+	"main": "main.js",
+	"type": "module",
+	"scripts": {
+		"build": "node esbuild.config.mjs production",
+		"dev": "node esbuild.config.mjs",
+		"check": "tsc --noEmit"
+	},
+	"keywords": [
+		"obsidian",
+		"hiveagi",
+		"llm",
+		"knowledge-graph"
+	],
+	"author": "Goldman Global Research Labs",
+	"license": "AGPL-3.0",
+	"devDependencies": {
+		"@types/node": "^20.11.0",
+		"esbuild": "^0.20.0",
+		"tslib": "^2.6.0",
+		"typescript": "^5.3.0"
+	},
+	"dependencies": {
+		"obsidian": "^1.4.11"
+	}
+}

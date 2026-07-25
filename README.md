@@ -107,7 +107,7 @@ python -m llm_wiki_engine process \
 | **P1** | LLM Wiki Engine (MiniMax M3 + DeepSeek V4 Flash dual-LLM) | ✅ 已完成（mock 驗證） |
 | **P1** | Mobile Capture App (Basic) | 📋 規劃中 |
 | **P2** | P2P Exchange (IPFS / content addressing) | ✅ 已完成（mock 驗證） |
-| **P2** | Obsidian Plugin | 📋 規劃中 |
+| **P2** | Obsidian Plugin | ✅ 已完成（build + cross-compat 驗證） |
 
 ---
 

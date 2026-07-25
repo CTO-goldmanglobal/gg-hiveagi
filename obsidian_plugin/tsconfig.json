@@ -1,0 +1,24 @@
+{
+	"compilerOptions": {
+		"baseUrl": ".",
+		"module": "ESNext",
+		"target": "ESNext",
+		"moduleResolution": "node",
+		"allowJs": false,
+		"noImplicitAny": true,
+		"strict": true,
+		"strictNullChecks": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"lib": [
+			"DOM",
+			"ESNext"
+		],
+		"outDir": "./dist"
+	},
+	"include": [
+		"src/**/*.ts"
+	]
+}
