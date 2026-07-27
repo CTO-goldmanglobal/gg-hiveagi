@@ -21,7 +21,7 @@
 │   researching human-perspective, decentralized,                 │
 │   audited AI. Everything we publish is AGPL.                    │
 │                                                                 │
-│   [★ Star on GitHub]    [Read the research]                    │  ← CTAs
+│   [★ Star on GitHub]    [See how it works]                     │  ← CTAs
 │                                                                 │
 │   [subtle frame→blur→CID hero animation]                        │
 │                                                                 │
@@ -109,7 +109,7 @@
 > Goldman Global Research Labs is our open-source R&D arm. We research human-perspective, decentralized, dual-LLM-audited AI. Everything we publish is AGPL.
 
 **Primary CTA**: `★ Star on GitHub` → https://github.com/CTO-goldmanglobal/gg-hiveagi
-**Secondary CTA**: `Read the research` → scrolls to "How it works"
+**Secondary CTA**: `See how it works` → scrolls to "How it works"
 
 **Hero visual**: a subtle, looping animation showing a single video frame → PII-blurred frame → base64 → JSON → CID. ~6 seconds. Static fallback: a labeled still of the pipeline. No stock AI imagery.
 
