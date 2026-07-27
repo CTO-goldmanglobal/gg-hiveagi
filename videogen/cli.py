@@ -68,14 +68,20 @@ def cmd_make(args) -> int:
     print("▶ Stage 3: SELECT + SCRIPT (LLM rank + narration)")
     from llm_wiki_engine.config import load_config as load_llm_config
     llm_config = load_llm_config(mock_mode=False)
-    script = select_and_script(
+    script, selected = select_and_script(
         analyses, llm_config,
         top_n=args.top_n,
         target_duration_sec=args.duration,
         location_hint=args.location,
+        ranker_prompt_path=config.frame_ranker_prompt,
+        writer_prompt_path=config.script_writer_prompt,
     )
     (work_dir / "script.json").write_text(
         json.dumps(script, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    # Persist the ranker's selection (model baseline) for the finalize step
+    (work_dir / "ranker_selection.json").write_text(
+        json.dumps(selected, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     if not script:
         print("❌ empty script", file=sys.stderr)
@@ -111,6 +117,86 @@ def cmd_make(args) -> int:
     return 0
 
 
+def cmd_finalize(args) -> int:
+    """
+    Compute the human-override signal: diff the model's ranker selection
+    against the (possibly edited) script.json, and log every frame's fate.
+    """
+    from .selection_log import compute_override_log, write_log, _generate_run_id
+
+    run_dir = Path(args.run_dir).resolve()
+    if not run_dir.is_dir():
+        print(f"❌ run dir not found: {run_dir}", file=sys.stderr)
+        return 1
+
+    # Load the three inputs
+    analyses_path = run_dir / "analysis.json"
+    ranker_path = run_dir / "ranker_selection.json"
+    script_path = run_dir / "script.json"
+
+    if not analyses_path.exists():
+        print(f"❌ analysis.json not found in {run_dir}", file=sys.stderr)
+        return 1
+    if not ranker_path.exists():
+        print(f"❌ ranker_selection.json not found in {run_dir}", file=sys.stderr)
+        print("   Did you run `make` with the updated pipeline?", file=sys.stderr)
+        return 1
+    if not script_path.exists():
+        print(f"❌ script.json not found in {run_dir}", file=sys.stderr)
+        return 1
+
+    analyses = json.loads(analyses_path.read_text(encoding="utf-8"))
+    ranker_selection = json.loads(ranker_path.read_text(encoding="utf-8"))
+    final_script = json.loads(script_path.read_text(encoding="utf-8"))
+
+    config_name = args.config or "ech"
+    run_id = args.run_id or _generate_run_id(config_name)
+    editor_id = args.editor_id or "founder"
+
+    print("═" * 60)
+    print("  VideoGen finalize — computing human-override signal")
+    print("═" * 60)
+    print(f"  run_dir:   {run_dir}")
+    print(f"  editor_id: {editor_id}")
+    print(f"  run_id:    {run_id}")
+    print()
+
+    log_entries = compute_override_log(
+        analyses=analyses,
+        ranker_selection=ranker_selection,
+        final_script=final_script,
+        run_id=run_id,
+        editor_id=editor_id,
+        config_name=config_name,
+    )
+
+    log_path, summary_path = write_log(log_entries, run_dir)
+
+    # Load summary for display
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+
+    print(f"  📝 selection_log.jsonl: {log_path}")
+    print(f"  📊 selection_summary.json: {summary_path}")
+    print()
+    print(f"  Total frames:     {summary['total_frames']}")
+    print(f"  Ranker kept:      {summary['ranker_kept']}")
+    print(f"  Final kept:       {summary['final_kept']}")
+    print(f"  Overrides:        {summary['overrides']}")
+    if summary["overrides"] > 0:
+        ot = summary["override_types"]
+        parts = [f"{k}={v}" for k, v in ot.items() if v]
+        print(f"  Override types:   {', '.join(parts)}")
+    if summary.get("shot_type_distribution_final"):
+        dist = summary["shot_type_distribution_final"]
+        parts = [f"{k}={v}" for k, v in sorted(dist.items(), key=lambda x: -x[1])]
+        print(f"  Shot types:       {', '.join(parts)}")
+    print()
+    print("  ⚠️  This log contains source.clip filenames + timestamps.")
+    print("      Review PII before publishing. See videogen/selection_schema.md.")
+    print("═" * 60)
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="videogen",
@@ -137,9 +223,18 @@ def main(argv=None) -> int:
                         help="Crossfade duration (default: from config)")
     p_make.set_defaults(func=cmd_make)
 
-    # finalize subcommand added in Commit 2
-    # p_final = sub.add_parser("finalize", ...)
-    # p_final.set_defaults(func=cmd_finalize)
+    # finalize subcommand — computes human-override signal
+    p_final = sub.add_parser("finalize",
+                             help="Log human-override signal (diff model vs edited script)")
+    p_final.add_argument("--run-dir", required=True,
+                         help="Work dir from a previous `make` run")
+    p_final.add_argument("--editor-id", default="founder",
+                         help="Who made the editorial decisions (default: founder)")
+    p_final.add_argument("--config", default="ech",
+                         help="Config name (default: ech)")
+    p_final.add_argument("--run-id", default=None,
+                         help="Override run_id (default: auto-generated)")
+    p_final.set_defaults(func=cmd_finalize)
 
     args = parser.parse_args(argv)
 

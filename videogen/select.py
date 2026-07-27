@@ -14,7 +14,7 @@ import os
 import urllib.request
 import urllib.error
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 # Reuse Labs' robust JSON extractor (handles <think> blocks etc.)
 import os
@@ -72,7 +72,8 @@ def _call_minimax(config: Config, system_prompt: str, user_prompt: str,
 def rank_frames(analyses: List[Dict[str, Any]],
                 config: Config,
                 top_n: int = 8,
-                target_duration_sec: int = 45) -> List[Dict[str, Any]]:
+                target_duration_sec: int = 45,
+                ranker_prompt_path: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Ask MiniMax to rank frames by tourism appeal + visual variety.
 
@@ -81,16 +82,24 @@ def rank_frames(analyses: List[Dict[str, Any]],
         config: Labs config (for MiniMax key)
         top_n: how many to keep
         target_duration_sec: informs the ranker's "how many slots" heuristic
+        ranker_prompt_path: path to a client-specific ranker prompt. If None,
+                            uses the default at videogen/prompts/default_frame_ranker.txt
 
     Returns:
-        Top-N subset of analyses, ordered by rank (best first).
+        Top-N subset of analyses, ordered by rank (best first). Each entry
+        is enriched with `_ranker_rationale` = {reason, shot_type} for the
+        selection-logging layer.
     """
     # Filter out frames that errored during analysis
     valid = [a for a in analyses if a.get("ai_analysis")]
     if len(valid) <= top_n:
         return valid  # nothing to rank
 
-    system_prompt = _load_prompt("frame_ranker")
+    # Load prompt: client-specific if provided, else default
+    if ranker_prompt_path and Path(ranker_prompt_path).exists():
+        system_prompt = Path(ranker_prompt_path).read_text(encoding="utf-8")
+    else:
+        system_prompt = _load_prompt("default_frame_ranker")
 
     # Compact summary: frame_index + one-line description (truncate to save tokens)
     summaries = []
@@ -103,7 +112,8 @@ def rank_frames(analyses: List[Dict[str, Any]],
         f"Prefer visual variety, narrative coherence, and strong tourism appeal.\n\n"
         + "\n".join(summaries)
         + '\n\nReturn JSON: {"ranked_indices": [<frame_index>, ...], '
-        '"rationale": {"<frame_index>": "<one-line reason>", ...}}'
+        '"rationale": {"<frame_index>": {"reason": "<one line>", '
+        '"shot_type": "<landscape|architecture|people|detail|food|action>"}, ...}}'
     )
 
     raw = _call_minimax(config, system_prompt, user_prompt, temperature=0.2)
@@ -114,16 +124,29 @@ def rank_frames(analyses: List[Dict[str, Any]],
         return valid[:top_n]
 
     ranked_indices = parsed["ranked_indices"][:top_n]
-    # Map back to analysis dicts
+    rationale = parsed.get("rationale", {})
+
+    # Map back to analysis dicts + attach rationale for logging
     by_index = {a["frame_index"]: a for a in valid}
-    selected = [by_index[i] for i in ranked_indices if i in by_index]
+    selected = []
+    for i in ranked_indices:
+        if i in by_index:
+            entry = dict(by_index[i])  # shallow copy so we don't mutate analyses
+            # rationale keys may be int or str depending on LLM output
+            rat = rationale.get(i) or rationale.get(str(i), {})
+            entry["_ranker_rationale"] = {
+                "reason": rat.get("reason", "") if isinstance(rat, dict) else str(rat),
+                "shot_type": rat.get("shot_type", "") if isinstance(rat, dict) else "",
+            }
+            selected.append(entry)
     return selected
 
 
 def write_script(selected: List[Dict[str, Any]],
                  config: Config,
                  target_duration_sec: int = 45,
-                 location_hint: str = "China") -> List[Dict[str, Any]]:
+                 location_hint: str = "China",
+                 writer_prompt_path: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Ask MiniMax to write a narration script for the selected frames.
 
@@ -134,7 +157,11 @@ def write_script(selected: List[Dict[str, Any]],
     if not selected:
         return []
 
-    system_prompt = _load_prompt("script_writer")
+    # Load prompt: client-specific if provided, else default
+    if writer_prompt_path and Path(writer_prompt_path).exists():
+        system_prompt = Path(writer_prompt_path).read_text(encoding="utf-8")
+    else:
+        system_prompt = _load_prompt("default_script_writer")
 
     descriptions = []
     for a in selected:
@@ -190,12 +217,22 @@ def select_and_script(analyses: List[Dict[str, Any]],
                       config: Config,
                       top_n: int = 8,
                       target_duration_sec: int = 45,
-                      location_hint: str = "China") -> List[Dict[str, Any]]:
-    """Convenience: rank → script in one call."""
+                      location_hint: str = "China",
+                      ranker_prompt_path: Optional[str] = None,
+                      writer_prompt_path: Optional[str] = None) -> tuple:
+    """
+    Convenience: rank → script in one call.
+
+    Returns:
+        (script, selected) — the script for compose, and the ranked selection
+        (with _ranker_rationale attached) for the finalize/logging layer.
+    """
     print(f"  🎯 ranking {len([a for a in analyses if a.get('ai_analysis')])} frames, picking top {top_n} ...")
-    selected = rank_frames(analyses, config, top_n, target_duration_sec)
+    selected = rank_frames(analyses, config, top_n, target_duration_sec,
+                           ranker_prompt_path=ranker_prompt_path)
     print(f"  ✍️  writing {target_duration_sec}s script for {len(selected)} frames ...")
-    script = write_script(selected, config, target_duration_sec, location_hint)
+    script = write_script(selected, config, target_duration_sec, location_hint,
+                          writer_prompt_path=writer_prompt_path)
     total = sum(s["duration_sec"] for s in script)
     print(f"  📝 script: {len(script)} segments, {total:.1f}s total")
-    return script
+    return script, selected
