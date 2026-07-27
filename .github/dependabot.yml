@@ -29,6 +29,34 @@ updates:
     commit-message:
       prefix: "deps(p0)"
 
+  # PII Anonymizer (auto-vision path) — pinned because the safety gate
+  # test depends on a stable synthetic-face detection score. Bumps arrive
+  # as PRs that must re-run test_safety_gate.py before merge.
+  - package-ecosystem: "pip"
+    directory: "/tools/pii_anonymizer"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "pii-safety"
+    commit-message:
+      prefix: "deps(pii)"
+
+  # P2 — P2P Exchange (currently stdlib-only; entry kept for future deps)
+  - package-ecosystem: "pip"
+    directory: "/p2p_exchange"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "p2-p2p"
+    commit-message:
+      prefix: "deps(p2)"
+
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"

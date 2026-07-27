@@ -5,6 +5,20 @@
 #
 # Install:
 #   pip install -r tools/pii_anonymizer/requirements.txt
+#
+# Versions are pinned (==) rather than floored (>=) because:
+#   - The PII safety gate test in test_safety_gate.py relies on a synthetic
+#     face being detected by MediaPipe at ~0.54 confidence (threshold 0.5).
+#     A mediapipe release that shifts that score by ~0.05 could turn the
+#     gate red or, worse, silently stop detecting the fixture while real
+#     recall also drifts. Pinning makes bumps arrive as reviewable
+#     Dependabot PRs (see .github/dependabot.yml) rather than surprises.
+#   - opencv 5.0 dropped the bundled HAAR cascade file; the plate detector
+#     uses edge-based detection that works across 4.x and 5.x, but pinning
+#     avoids an unexpected major bump silently changing behaviour.
+#
+# Bump via Dependabot PR, re-run test_safety_gate.py, confirm both
+# assertions still pass on the new version, then merge.
 
-opencv-python>=4.8
-mediapipe>=0.10
+opencv-python==5.0.0.93
+mediapipe==0.10.35

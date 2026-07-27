@@ -8,7 +8,7 @@ Both detectors are real and CI-tested. The auto-vision path's safety enforcement
 
 | Module | Implementation | Notes |
 | :--- | :--- | :--- |
-| `blur_faces.py` | **MediaPipe Tasks `FaceDetector`** (`blaze_face_short_range` model, auto-downloaded to `~/.hiveagi_models/`) | Full-range model (`model_selection=1`) suits street-capture distances |
+| `blur_faces.py` | **MediaPipe Tasks `FaceDetector`** (`blaze_face_short_range.tflite`, auto-downloaded to `~/.hiveagi_models/`) | ⚠️ **Short-range model** — tuned for ~2 m (selfie / arm's-length), NOT street capture at 5–20 m. Street footage will miss distant faces; see accuracy note below. |
 | `blur_plates.py` | **Edge-based detector** (Sobel + morphological close + contour, no external model file) | Generic; AU plate recall is moderate — see accuracy note below |
 | `anonymize.py` | Unified entry combining face + plate blur | What `vision.py` calls; raises `SafetyError` on any failure |
 | `test_safety_gate.py` | CI test asserting the gate detects + refuses-when-broken | Synthetic face generated in-process; runs in CI on every push/PR |
@@ -82,9 +82,10 @@ This runs in CI. If you change the blur pipeline and the test fails, **your chan
 
 ## Honest accuracy notes
 
-- **Face detection is high-recall.** MediaPipe's blaze model is well-trained; expect >95% recall on frontal faces at typical street distances. Profile faces and heavy occlusion may be missed — always review auto-vision output for edge cases.
-- **Plate detection is moderate-recall.** The edge-based detector is generic (Sobel + morphology + aspect-ratio filtering) because opencv 5.0 dropped the bundled HAAR cascade file. It works but **Australian plates (yellow-on-black, white-on-black) differ from the US/EU data the approach was tuned for** — expect ~60–80% recall depending on angle and lighting. Manual review of auto-vision output is expected for now. A future P2.5 upgrade could swap in HyperLPR or a YOLOv8-trained AU plate detector for higher recall.
+- **Face detection is short-range only.** MediaPipe's `blaze_face_short_range` is tuned for ~2 m (selfie / arm's-length / front-camera). On street footage at 5–20 m, **expect low recall — distant bystanders will routinely be missed**. The Tasks API no longer exposes a `model_selection` parameter (that was the legacy `mp.solutions.face_detection` API), and MediaPipe doesn't ship a long-range face-detection `.tflite` in this pipeline. For genuine street-capture coverage, the manual curation path (`tools/video_ingest/capture_helper.py`) is the safer default; a future upgrade could swap in a long-range detector (e.g. YuNet via OpenCV `FaceDetectorYN`, or a fine-tuned BlazeFace long-range variant).
+- **Plate detection is moderate-recall.** The edge-based detector is generic (Sobel + morphology + aspect-ratio filtering) because opencv 5.0 dropped the bundled HAAR cascade file. It works but **Australian plates (yellow-on-black, white-on-black) differ from the US/EU data the approach was tuned for** — expect ~60–80% recall depending on angle and lighting. A future P2.5 upgrade could swap in HyperLPR or a YOLOv8-trained AU plate detector for higher recall.
 - **Neither detector does OCR.** Faces and plates are blurred, never identified. There is no path in this codebase that reads plate text or matches faces to identities.
+- **Auto-vision output should be reviewed.** Because both detectors have known recall limits, frames that pass through `process-video` may still contain unblurred distant faces or missed plates. Review output before publishing any resulting Seed Package.
 
 ## Dependencies
 

@@ -6,15 +6,16 @@ This is the one thing CONTRIBUTING.md promises hardest ("code-enforced,
 no bypass"). Without this test, a refactor that silently breaks blurring
 would ship green. Run in CI to assert:
 
-  1. anonymize_image() successfully detects + blurs a synthetic face
-     (proves the real MediaPipe + OpenCV pipeline is wired correctly)
-  2. SafetyError raises when the underlying deps are absent
-     (proves the gate refuses, not silently skips)
+  1. anonymize_image() actually blurs a detected face — verified by
+     comparing pixel variance in the face region before/after (a real
+     assertion, not the self-reported `faces_blurred` counter).
+  2. SafetyError raises when the underlying deps are absent (the gate
+     refuses, not silently skips).
 
 No external image fixtures — the synthetic face is generated in-process
 via OpenCV geometric primitives. MediaPipe's blaze_face_short_range
-detects it at ~0.54 confidence (above the 0.5 threshold), confirmed
-stable across runs.
+detects it at ~0.54 confidence (above the 0.5 threshold), confirmed on
+mediapipe==0.10.35 (pinned in requirements.txt because of this).
 
 Usage:
     python tools/pii_anonymizer/test_safety_gate.py
@@ -24,6 +25,12 @@ Usage:
 import sys
 import tempfile
 from pathlib import Path
+
+
+# Geometric centre of the synthetic face drawn by _generate_synthetic_face.
+# Used to extract a region-of-interest for the pixel-variance assertion.
+_FACE_CENTRE = (320, 240)
+_FACE_ROI_RADIUS = 80
 
 
 def _generate_synthetic_face(path: Path) -> None:
@@ -44,8 +51,38 @@ def _generate_synthetic_face(path: Path) -> None:
     cv2.imwrite(str(path), img)
 
 
+def _face_roi_variance(image_path: Path) -> float:
+    """
+    Pixel-intensity variance in the central face ROI.
+
+    Before blur: high (eyes/nose/mouth edges create contrast).
+    After correct Gaussian blur: substantially lower (edges smoothed).
+
+    Returns the standard deviation of grayscale pixel values in the ROI.
+    """
+    import cv2
+
+    img = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        raise RuntimeError(f"Could not read image for variance check: {image_path}")
+    cx, cy = _FACE_CENTRE
+    r = _FACE_ROI_RADIUS
+    roi = img[cy - r:cy + r, cx - r:cx + r]
+    return float(roi.std())
+
+
 def test_blur_detects_and_blurs_face() -> None:
-    """The safety gate must detect a face and report it as blurred."""
+    """
+    The safety gate must detect a face AND actually blur it.
+
+    Two assertions:
+      (a) anonymize_image() reports faces_blurred >= 1
+      (b) pixel variance in the face ROI drops substantially after blur
+
+    Assertion (b) is the real one — (a) alone could pass if the code
+    counted a face but wrote an unblurred copy (a regression that
+    silently defeats the entire safety gate).
+    """
     sys.path.insert(0, str(Path(__file__).parent))
     from anonymize import anonymize_image
 
@@ -54,8 +91,12 @@ def test_blur_detects_and_blurs_face() -> None:
         out = Path(tmp) / "blurred.png"
         _generate_synthetic_face(src)
 
+        # Variance before blur — expect high (eyes/nose/mouth edges).
+        variance_before = _face_roi_variance(src)
+
         result_path, summary = anonymize_image(str(src), str(out))
 
+        # Assertion (a): self-reported count (necessary, not sufficient).
         assert summary["faces_blurred"] >= 1, (
             f"SAFETY GATE BROKEN: anonymize_image() reported "
             f"faces_blurred={summary['faces_blurred']}, expected >= 1. "
@@ -64,20 +105,43 @@ def test_blur_detects_and_blurs_face() -> None:
             f"promises is 'code-enforced, no bypass'."
         )
         assert Path(result_path).exists(), "Blurred output file was not written"
+
+        # Assertion (b): pixel-level — variance must drop after blur.
+        # Gaussian smoothing reduces high-frequency content; the ROI's
+        # std should fall meaningfully. Threshold: at least 40% reduction.
+        variance_after = _face_roi_variance(Path(result_path))
+        reduction_ratio = variance_after / variance_before if variance_before > 0 else 1.0
+        assert reduction_ratio < 0.6, (
+            f"SAFETY GATE BROKEN: face ROI variance did not drop after blur. "
+            f"before={variance_before:.2f}, after={variance_after:.2f}, "
+            f"ratio={reduction_ratio:.2f} (expected < 0.6). "
+            f"The code reports a face was blurred but the pixels are "
+            f"substantially unchanged — anonymize_image() may be counting "
+            f"a detection without writing the blurred result."
+        )
+
         print(
-            f"✅ Face detection + blur works: "
-            f"{summary['faces_blurred']} face(s), {summary['plates_blurred']} plate(s) blurred"
+            f"✅ Face detection + blur works (verified at pixel level): "
+            f"{summary['faces_blurred']} face(s) blurred, "
+            f"ROI variance {variance_before:.1f} → {variance_after:.1f} "
+            f"({(1 - reduction_ratio) * 100:.0f}% reduction)"
         )
 
 
 def test_safety_gate_raises_when_deps_absent() -> None:
     """
     The safety gate must raise SafetyError (not silently skip) when blur
-    dependencies are missing. We simulate this by hiding mediapipe from
-    the import system.
-    """
-    import importlib
+    dependencies are missing.
 
+    Implementation note: this works by poisoning sys.modules["mediapipe"]
+    to None. On Python ≥3.4 a `None` value in sys.modules forces
+    `import mediapipe` to raise ImportError (this is documented CPython
+    behaviour, unlike the legacy meta-path finder API). Do NOT add a
+    MetaPathFinder with find_module/load_module — those were removed in
+    Python 3.12 and are silently ignored on 3.13/3.14, which would make
+    this test pass for the wrong reason if the sys.modules line were
+    ever removed.
+    """
     # Pre-flight: if mediapipe isn't installed, the test is trivially true
     # but meaningless. Skip with a clear message rather than pass silently.
     try:
@@ -89,22 +153,11 @@ def test_safety_gate_raises_when_deps_absent() -> None:
     sys.path.insert(0, str(Path(__file__).parent))
     from anonymize import SafetyError, anonymize_image
 
-    # Hide mediapipe by poisoning sys.modules so `import mediapipe` fails
+    # Poison: a None value in sys.modules forces import to raise ImportError.
+    # See https://docs.python.org/3/library/sys.html#sys.modules
     real_mediapipe = sys.modules.pop("mediapipe", None)
-    # Also poison the blur_faces module so it re-imports with mediapipe hidden
-    sys.modules.pop("blur_faces", None)
-
-    class _ImportBlocker:
-        """Meta-path finder that rejects 'mediapipe' imports."""
-        def find_module(self, name, path=None):  # noqa: D401
-            if name == "mediapipe" or name.startswith("mediapipe."):
-                return self
-        def load_module(self, name):  # noqa: D401
-            raise ImportError(f"Import blocked for test: {name}")
-
-    blocker = _ImportBlocker()
-    sys.meta_path.insert(0, blocker)
-    sys.modules["mediapipe"] = None  # belt and suspenders
+    sys.modules.pop("blur_faces", None)  # force re-import with mediapipe=None
+    sys.modules["mediapipe"] = None
 
     try:
         with tempfile.TemporaryDirectory() as tmp:
@@ -118,12 +171,11 @@ def test_safety_gate_raises_when_deps_absent() -> None:
                     "must refuse, not silently skip — a refactor has added "
                     "a bypass."
                 )
-            except SafetyError as e:
-                print(f"✅ Safety gate refuses when deps absent: SafetyError raised")
+            except SafetyError:
+                print("✅ Safety gate refuses when deps absent: SafetyError raised")
                 return
     finally:
         # Restore
-        sys.meta_path.remove(blocker)
         sys.modules.pop("mediapipe", None)
         if real_mediapipe is not None:
             sys.modules["mediapipe"] = real_mediapipe
