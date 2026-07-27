@@ -66,3 +66,7 @@ obsidian_plugin/dist/
 
 # ZCode / agent internal artifacts
 .zcode/
+
+# Legal / privileged — never commit. Contains solicitor engagement briefs,
+# opinions, risk assessments. Public disclosure may waive privilege.
+legal/
