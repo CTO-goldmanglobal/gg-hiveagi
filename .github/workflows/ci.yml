@@ -28,6 +28,10 @@ jobs:
           # PII anonymizer deps — needed for the safety gate test below.
           # Heavy native deps (opencv-python, mediapipe), but the safety gate
           # is the one thing CONTRIBUTING.md promises hardest, so it must have CI coverage.
+          # mediapipe needs OpenGL ES libs on Linux (headless CI has no GL by default).
+          if [ "$(uname)" = "Linux" ]; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq libgles2-mesa libegl1
+          fi
           pip install -r tools/pii_anonymizer/requirements.txt
 
       - name: P0 — Seed Generator
