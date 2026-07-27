@@ -130,6 +130,22 @@ See [`tools/video_ingest/README.md`](./tools/video_ingest/README.md).
 | **P2** | P2P Exchange (IPFS / content addressing) | ✅ Complete (mock verified) |
 | **P2** | Obsidian Plugin | ✅ Complete (build + cross-compat verified) |
 
+### 🏭 Commercial Modules (Goldman Forge)
+
+These are commercial product instances built on top of the Labs research
+pipeline. Each one solves a real client problem AND contributes
+human-perspective data ("what is beautiful / important / worth recording")
+back to the Labs knowledge network — the commercial modules fund and feed
+the research, the research makes the commercial modules better.
+
+| Module | Client | Status | What it does |
+| :--- | :--- | :--- | :--- |
+| **[ECH Auto-Cut](./explore_china_holiday/)** | Explore China Holiday | ✅ MVP | Turns tourism footage into short-form Reels automatically. Frame selection + English narration script + 9:16 vertical composition. PII safety gate inherited from Labs. |
+
+> **Vision:** AI glasses capture → Forge commercial modules produce client value →
+> Labs research layer absorbs "beauty definition" data → AGI learns what
+> humans find worth recording, not what computers can scrape.
+
 ---
 
 ## 📄 License Overview

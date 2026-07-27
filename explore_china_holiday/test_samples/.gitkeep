@@ -1,0 +1,4 @@
+# Drop your ECH video clips here (.mp4, .mov, .m4v)
+# Then run:
+#   cd explore_china_holiday
+#   python -m ech_videogen make --clips test_samples --out ../ech_reel.mp4

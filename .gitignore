@@ -70,3 +70,6 @@ obsidian_plugin/dist/
 # Legal / privileged — never commit. Contains solicitor engagement briefs,
 # opinions, risk assessments. Public disclosure may waive privilege.
 legal/
+
+# ECH VideoGen runtime output (per-run artifacts, not source)
+explore_china_holiday/ech_output/

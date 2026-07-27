@@ -1,0 +1,12 @@
+# ECH VideoGen — dependencies
+#
+# This module imports the Labs vision pipeline, which carries the heavy deps.
+# Install the Labs requirements (which include openai, pydantic, opencv, mediapipe):
+#
+#   pip install -r tools/pii_anonymizer/requirements.txt
+#   pip install -r llm_wiki_engine/requirements.txt
+#
+# External tool required: ffmpeg (macOS: brew install ffmpeg)
+#
+# No additional Python deps are introduced by ech_videogen itself —
+# it uses only stdlib + Labs' deps + ffmpeg subprocess calls.

@@ -143,7 +143,7 @@ def _call_minimax_vision(
             {"role": "user", "content": user_content},
         ],
         "temperature": temperature,
-        "max_tokens": 600,
+        "max_tokens": 1000,
         "response_format": {"type": "json_object"},
     }).encode("utf-8")
 
