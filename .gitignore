@@ -73,3 +73,6 @@ legal/
 
 # ECH VideoGen runtime output (per-run artifacts, not source)
 explore_china_holiday/ech_output/
+
+# VideoGen runtime output
+videogen_output/

@@ -17,8 +17,12 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 # Reuse Labs' robust JSON extractor (handles <think> blocks etc.)
+import os
 import sys
-_repo_root = Path(__file__).resolve().parents[2]
+_repo_root = Path(os.environ.get(
+    "VIDEOGEN_REPO_ROOT",
+    Path(__file__).resolve().parents[1],
+))
 if str(_repo_root) not in sys.path:
     sys.path.insert(0, str(_repo_root))
 from llm_wiki_engine.llm_json import extract_json

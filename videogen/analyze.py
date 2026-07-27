@@ -1,34 +1,37 @@
 """
-Stage 2 — ANALYZE
-The Labs↔Forge seam.
+Stage 2 — ANALYZE (the Labs↔Forge seam)
 
 Iterates frames, calls llm_wiki_engine.vision.process_frame() on each.
-ECH never touches MiniMax / DeepSeek / PII directly — all of that stays
-inside Labs. This means:
-  - The PII safety gate (face/plate blur) is automatically enforced on
-    ECH clips. A tourist video with bystanders gets blurred before the
-    LLM sees it, for free.
-  - If Labs' vision API changes, ECH adapts in this one file.
+This module never touches MiniMax / DeepSeek / PII directly — all of that
+stays inside Labs. The PII safety gate (face/plate blur) is automatically
+enforced on every frame, for free.
 
 Output: a list of frame-analysis dicts the SELECT stage consumes.
 """
 
+import os
 import sys
 from pathlib import Path
 from typing import List, Dict, Any
 
 
+# Locate the repo root so `llm_wiki_engine` is importable.
+# Explicit env var wins; fallback is one parent up from this file
+# (videogen/ is at repo root, so parents[1] is correct).
+_REPO_ROOT = Path(os.environ.get(
+    "VIDEOGEN_REPO_ROOT",
+    Path(__file__).resolve().parents[1],
+))
+
+
 def _ensure_labs_importable():
-    """Add repo root to sys.path so `llm_wiki_engine` is importable."""
-    # ech_videogen/ is at explore_china_holiday/ech_videogen/
-    # repo root is two parents up from this file's parent
-    repo_root = Path(__file__).resolve().parents[2]
-    if str(repo_root) not in sys.path:
-        sys.path.insert(0, str(repo_root))
+    if str(_REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(_REPO_ROOT))
 
 
 def analyze_frames(frames: List[Path],
                    location_hint: str = "China",
+                   force_english: bool = True,
                    verbose: bool = True) -> List[Dict[str, Any]]:
     """
     Run vision analysis on each frame via the Labs pipeline.
@@ -36,19 +39,13 @@ def analyze_frames(frames: List[Path],
     Args:
         frames: list of frame image paths
         location_hint: e.g. "Beijing", "Guilin", "China" — passed to LLM
+        force_english: if True, the participant_description hints English output
+                       (the vision pipeline follows input language by default;
+                        commercial reels target English-speaking markets)
         verbose: print progress
 
     Returns:
-        List of dicts, one per frame:
-        [{
-            "frame_path": str,
-            "frame_index": int,
-            "trigger_type": str,
-            "domain": str,
-            "tags": [str, ...],
-            "ai_analysis": str,
-            "related_links": [str, ...],
-        }, ...]
+        List of dicts, one per frame.
 
     Raises:
         ImportError: if llm_wiki_engine or its deps aren't available
@@ -60,6 +57,9 @@ def analyze_frames(frames: List[Path],
 
     config = load_config(mock_mode=False)  # vision needs real MiniMax
 
+    hint = "(tourism footage frame — respond in English)" if force_english \
+           else "(tourism footage frame)"
+
     results = []
     for i, frame in enumerate(frames):
         if verbose:
@@ -69,10 +69,7 @@ def analyze_frames(frames: List[Path],
                 str(frame),
                 config,
                 location_hint=location_hint,
-                # Force English participant description — ECH reels target
-                # English-speaking markets, so the analysis + downstream
-                # script must be English regardless of input language.
-                participant_description="(tourism footage frame — respond in English)",
+                participant_description=hint,
             )
             extra = getattr(raw, "_vision_extra", {}) or {}
             results.append({
@@ -88,7 +85,6 @@ def analyze_frames(frames: List[Path],
                 preview = extra["ai_analysis"][:80].replace("\n", " ")
                 print(f"       → {preview}...")
         except Exception as e:
-            # Log + skip — don't kill the whole run for one bad frame
             print(f"       ⚠️  {type(e).__name__}: {e}")
             results.append({
                 "frame_path": str(frame),

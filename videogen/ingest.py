@@ -1,6 +1,7 @@
 """
 Stage 1 — INGEST
 ffprobe video metadata + sample candidate frames via ffmpeg.
+(Generic pipeline core — moved from ech_videogen. No ECH-specific logic.)
 """
 
 import json
@@ -28,7 +29,6 @@ def probe_clip(clip_path: Path) -> Dict:
         out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
         data = json.loads(out)
         stream = data.get("streams", [{}])[0]
-        # r_frame_rate is "30/1" — convert to float
         fr = stream.get("r_frame_rate", "30/1")
         num, den = fr.split("/")
         fps = float(num) / float(den) if float(den) else 30.0
@@ -48,12 +48,8 @@ def probe_clip(clip_path: Path) -> Dict:
 def sample_frames(clip_path: Path, out_dir: Path,
                   interval_sec: float = 5.0,
                   quality: int = 3) -> List[Path]:
-    """
-    Sample one frame every `interval_sec` seconds via ffmpeg.
-    Returns sorted list of frame paths: frame_000001.jpg, frame_000002.jpg, ...
-    """
+    """Sample one frame every `interval_sec` seconds via ffmpeg."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    # Use fps filter (1/interval = frames per second)
     fps_filter = f"fps=1/{interval_sec}"
     out_pattern = str(out_dir / "frame_%06d.jpg")
     cmd = [
@@ -73,16 +69,7 @@ def sample_frames(clip_path: Path, out_dir: Path,
 
 def ingest_clips(clips_dir: Path, frames_out: Path,
                  interval_sec: float = 5.0) -> Dict:
-    """
-    Walk clips_dir, probe each, sample frames into frames_out/<clip_stem>/.
-
-    Returns:
-        {
-            "clips": [{path, width, height, fps, duration}, ...],
-            "frames": {clip_stem: [Path, ...], ...},
-            "total_frames": int,
-        }
-    """
+    """Walk clips_dir, probe each, sample frames into frames_out/<clip_stem>/."""
     if not ffmpeg_available():
         raise RuntimeError("ffmpeg/ffprobe not installed. macOS: brew install ffmpeg")
 

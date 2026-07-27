@@ -1,8 +1,8 @@
 """
-CLI entry: `python -m ech_videogen make --clips <dir> --out reel.mp4`
+CLI entry: `python -m videogen make --config ech --clips <dir> --out reel.mp4`
 
-Runs the full 4-stage pipeline:
-  ingest → analyze → select+script → compose
+Generic pipeline core. The --config flag selects which client's prompts
+and settings to use (ech, future: realestate, education, ...).
 """
 
 import argparse
@@ -15,26 +15,30 @@ from .analyze import analyze_frames
 from .select import select_and_script
 from .srt import script_to_srt
 from .compose import compose_reel
+from . import load_config
 
 
 def cmd_make(args) -> int:
     clips_dir = Path(args.clips).resolve()
     out_path = Path(args.out).resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    work_dir = Path(args.work_dir or "./ech_output").resolve()
+    work_dir = Path(args.work_dir or "./videogen_output").resolve()
     work_dir.mkdir(parents=True, exist_ok=True)
 
     if not clips_dir.is_dir():
         print(f"❌ clips dir not found: {clips_dir}", file=sys.stderr)
         return 1
 
+    config = load_config(args.config)
+
     print("═" * 60)
-    print("  ECH VideoGen — Explore China Holiday auto-Reel generator")
+    print(f"  VideoGen — config: {config.name}")
     print("═" * 60)
     print(f"  clips:    {clips_dir}")
     print(f"  out:      {out_path}")
     print(f"  work_dir: {work_dir}")
     print(f"  target:   {args.duration}s, top {args.top_n} frames, {args.location}")
+    print(f"  aspect:   {config.target_aspect}, lang: {config.language}")
     print()
 
     # === STAGE 1: INGEST ===
@@ -51,8 +55,9 @@ def cmd_make(args) -> int:
 
     # === STAGE 2: ANALYZE (via Labs vision pipeline) ===
     print("▶ Stage 2: ANALYZE (Labs vision — MiniMax M3 + PII blur gate)")
-    analyses = analyze_frames(all_frames, location_hint=args.location)
-    # Persist
+    force_en = (config.language == "en")
+    analyses = analyze_frames(all_frames, location_hint=args.location,
+                              force_english=force_en)
     (work_dir / "analysis.json").write_text(
         json.dumps(analyses, indent=2, ensure_ascii=False), encoding="utf-8"
     )
@@ -61,10 +66,10 @@ def cmd_make(args) -> int:
 
     # === STAGE 3: SELECT + SCRIPT ===
     print("▶ Stage 3: SELECT + SCRIPT (LLM rank + narration)")
-    from llm_wiki_engine.config import load_config
-    config = load_config(mock_mode=False)
+    from llm_wiki_engine.config import load_config as load_llm_config
+    llm_config = load_llm_config(mock_mode=False)
     script = select_and_script(
-        analyses, config,
+        analyses, llm_config,
         top_n=args.top_n,
         target_duration_sec=args.duration,
         location_hint=args.location,
@@ -78,7 +83,7 @@ def cmd_make(args) -> int:
     print()
 
     # === STAGE 4: COMPOSE ===
-    print("▶ Stage 4: COMPOSE (ffmpeg segments + xfade + subtitles + 9:16)")
+    print("▶ Stage 4: COMPOSE (ffmpeg segments + xfade + subtitles)")
     srt_path = work_dir / "subtitles.srt"
     script_to_srt(script, srt_path)
     print(f"  📝 subtitles: {srt_path}")
@@ -90,42 +95,62 @@ def cmd_make(args) -> int:
         interval_sec=args.interval,
         work_dir=work_dir,
         out_path=out_path,
-        crossfade_sec=args.crossfade,
+        crossfade_sec=config.crossfade_sec,
     )
 
     total_duration = sum(s["duration_sec"] for s in script)
     print()
     print("═" * 60)
     print(f"  ✅ Reel ready: {out_path}")
-    print(f"     {total_duration:.1f}s, {len(script)} segments, 9:16 vertical")
+    print(f"     {total_duration:.1f}s, {len(script)} segments, {config.target_aspect}")
     print("═" * 60)
+    print()
+    print("  Next: review the draft. Edit script.json if you want to change")
+    print("  frame order / durations / subtitles, then run:")
+    print(f"    python -m videogen finalize --run-dir {work_dir} --editor-id <you>")
     return 0
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
-        prog="ech_videogen",
-        description="Explore China Holiday auto-Reel generator (Goldman Forge)",
+        prog="videogen",
+        description="Generic auto-video pipeline (Goldman Forge)",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_make = sub.add_parser("make", help="Generate a Reel from a directory of clips")
+    p_make = sub.add_parser("make", help="Generate a draft Reel")
+    p_make.add_argument("--config", default="ech",
+                        help="Named config (ech, future: realestate, ...)")
     p_make.add_argument("--clips", required=True, help="Directory of source video clips")
     p_make.add_argument("--out", required=True, help="Output .mp4 path")
-    p_make.add_argument("--work-dir", default=None, help="Intermediate artifacts dir (default ./ech_output)")
+    p_make.add_argument("--work-dir", default=None,
+                        help="Intermediate artifacts dir (default ./videogen_output)")
     p_make.add_argument("--interval", type=float, default=5.0,
                         help="Frame sampling interval in seconds (default 5)")
     p_make.add_argument("--top-n", type=int, default=8,
                         help="Number of frames to select (default 8)")
-    p_make.add_argument("--duration", type=int, default=45,
-                        help="Target Reel duration in seconds (default 45)")
-    p_make.add_argument("--location", default="China",
-                        help="Location hint for the LLM (e.g. 'Beijing', 'Guilin')")
-    p_make.add_argument("--crossfade", type=float, default=0.5,
-                        help="Crossfade duration between segments (default 0.5s)")
+    p_make.add_argument("--duration", type=int, default=None,
+                        help="Target Reel duration in seconds (default: from config)")
+    p_make.add_argument("--location", default=None,
+                        help="Location hint (default: from config)")
+    p_make.add_argument("--crossfade", type=float, default=None,
+                        help="Crossfade duration (default: from config)")
     p_make.set_defaults(func=cmd_make)
 
+    # finalize subcommand added in Commit 2
+    # p_final = sub.add_parser("finalize", ...)
+    # p_final.set_defaults(func=cmd_finalize)
+
     args = parser.parse_args(argv)
+
+    # Apply config defaults where CLI didn't override
+    if args.command == "make":
+        config = load_config(args.config)
+        if args.duration is None:
+            args.duration = config.target_duration_sec
+        if args.location is None:
+            args.location = config.location_default
+
     try:
         return args.func(args)
     except KeyboardInterrupt:

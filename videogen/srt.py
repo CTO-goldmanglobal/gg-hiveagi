@@ -2,6 +2,7 @@
 SRT subtitle generation.
 Converts a script [{frame_index, duration_sec, voiceover_text}, ...] into
 a .srt file with sequential timings.
+(Generic pipeline core — moved from ech_videogen.)
 """
 
 from pathlib import Path
@@ -9,7 +10,6 @@ from typing import List, Dict
 
 
 def _format_timestamp(seconds: float) -> str:
-    """Convert 12.5 → '00:00:12,500' (SRT timestamp format)."""
     if seconds < 0:
         seconds = 0
     h = int(seconds // 3600)
@@ -20,7 +20,6 @@ def _format_timestamp(seconds: float) -> str:
 
 
 def _wrap_text(text: str, max_chars: int = 42) -> str:
-    """Word-wrap a subtitle line for readability on mobile."""
     if len(text) <= max_chars:
         return text
     words = text.split()
@@ -42,17 +41,7 @@ def _wrap_text(text: str, max_chars: int = 42) -> str:
 
 def script_to_srt(script: List[Dict], out_path: Path,
                   max_chars_per_line: int = 42) -> Path:
-    """
-    Convert a script (list of {duration_sec, voiceover_text}) to an SRT file.
-
-    Args:
-        script: [{duration_sec: float, voiceover_text: str}, ...]
-        out_path: where to write the .srt
-        max_chars_per_line: word-wrap width
-
-    Returns:
-        The path written.
-    """
+    """Convert a script to an SRT file."""
     lines = []
     current_time = 0.0
     for i, segment in enumerate(script, 1):
@@ -66,7 +55,7 @@ def script_to_srt(script: List[Dict], out_path: Path,
         lines.append(str(i))
         lines.append(f"{start} --> {end}")
         lines.append(_wrap_text(text, max_chars_per_line))
-        lines.append("")  # blank line separates cues
+        lines.append("")
         current_time += duration
 
     out_path = Path(out_path)
