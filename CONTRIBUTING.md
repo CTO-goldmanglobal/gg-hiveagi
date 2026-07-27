@@ -53,7 +53,7 @@ Because Project Hive.AGI uses **dual licensing (AGPL-3.0 + CC-BY-NC-SA-4.0 + Com
 4. Seed Data you contribute is released to the public under **CC-BY-NC-SA-4.0** ([DATA_LICENSE.md](./DATA_LICENSE.md)).
 5. You confirm the contribution is your own work, that you have the right to grant this licence, and that it complies with the Privacy & PII rules above.
 
-> ℹ️ **Why term 2 is a grant, not a "retention".** Dual licensing only works if contributors explicitly licence Goldman Global the right to re-license commercially. Without an explicit grant, Goldman Global has nothing to "retain". This wording was corrected after legal review flagged the earlier "retains the right" phrasing as a nullity. **Contributors: if you have questions about this grant, email <cto@goldmanglobal.com.au> before opening a PR — do not tick the box blindly.**
+> ℹ️ **Why term 2 is a grant, not a "retention".** Dual licensing only works if contributors explicitly licence Goldman Global the right to re-license commercially. Without an explicit grant, Goldman Global has nothing to "retain". **Note: this wording has not yet been reviewed by a solicitor. If you have questions about the grant — including whether it is sufficient or enforceable in your jurisdiction — email <cto@goldmanglobal.com.au> before opening a PR. Do not tick the box blindly.**
 
 **How to sign**: tick the CLA confirmation checkbox in the [Pull Request template](./.github/PULL_REQUEST_TEMPLATE.md). Seed Package contributors confirm the same terms in the submission issue.
 
@@ -151,7 +151,7 @@ python tools/seed_generator/validate_seed.py --path seed_output/<your_package>/
 python -m p2p_exchange publish --package seed_output/<your_package> --mock
 ```
 
-Then **open an issue** using the Seed Package label containing: the CID, the domain (`tourism` / `industrial` / `legal` / …), the entry count, a one-paragraph description of what the knowledge covers, and your confirmation of the CLA and PII rules. Maintainers verify the CID and add it to the network registry.
+Then **open an issue using the [Seed Package Submission template](./.github/ISSUE_TEMPLATE/seed_package_submission.md)** (the `seed-package` label is applied automatically). It will ask for the CID, the domain (`tourism` / `industrial` / `legal` / …), the entry count, a one-paragraph description of what the knowledge covers, and your confirmation of the CLA and PII rules. Maintainers verify the CID and add it to the network registry.
 
 Drop `--mock` once you have a local kubo daemon running to publish a real IPFS CID.
 

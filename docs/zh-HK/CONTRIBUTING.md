@@ -55,7 +55,7 @@ Hive.AGI 收集嘅係**人類視角數據**，即係話貢獻可能帶有真實�
 4. 你貢獻嘅 Seed Data 會以 **CC-BY-NC-SA-4.0** 向公眾發佈（[DATA_LICENSE.md](../../DATA_LICENSE.md)）。
 5. 你確認呢個貢獻係你自己嘅作品，你有權授予呢個授權，而且符合上面嘅私隱同埋 PII 規則。
 
-> ℹ️ **點解條款 2 係一個授予（grant），而唔係「保留（retention）」。** 雙重授權只有喺貢獻者明確授權 Goldman Global 商業再授權嘅權利嗰陣先至行得通。如果冇明確嘅授予，Goldman Global 根本冇嘢可以「保留」。法律審查之前將早期嘅「保留權利」措辭標記為無效之後，呢個寫法已經修正咗。**貢獻者：如果你對呢個授予有疑問，喺開 PR 之前 email 俾 <cto@goldmanglobal.com.au> — 唔好盲咁剔個框。**
+> ℹ️ **點解條款 2 係一個授予（grant），而唔係「保留（retention）」。** 雙重授權只有喺貢獻者明確授權 Goldman Global 商業再授權嘅權利嗰陣先至行得通。如果冇明確嘅授予，Goldman Global 根本冇嘢可以「保留」。**注意：呢個措辭仲未經律師審查。如果你對呢個授予有疑問 —— 包括佢喺你嘅司法管轄區係咪足夠或者可執行 —— 喺開 PR 之前 email 俾 <cto@goldmanglobal.com.au>。唔好盲咁剔個框。**
 
 **點樣簽**：喺 [Pull Request 模板](../../.github/PULL_REQUEST_TEMPLATE.md)入面剔 CLA 確認框。Seed Package 貢獻者要喺提交 issue 入面確認相同嘅條款。
 
@@ -153,7 +153,7 @@ python tools/seed_generator/validate_seed.py --path seed_output/<your_package>/
 python -m p2p_exchange publish --package seed_output/<your_package> --mock
 ```
 
-然後**開一個 issue**，用 Seed Package label，包含：CID、domain（`tourism` / `industrial` / `legal` / …）、條目數量、一段描述講解知識涵蓋咩，同埋你對 CLA 同 PII 規則嘅確認。維護者會驗證個 CID 同埋將佢加入網絡註冊表。
+然後**用 [Seed Package Submission 模板](../../.github/ISSUE_TEMPLATE/seed_package_submission.md)開一個 issue**（`seed-package` label 會自動套用）。模板會問你：CID、domain（`tourism` / `industrial` / `legal` / …）、條目數量、一段描述講解知識涵蓋咩，同埋你對 CLA 同 PII 規則嘅確認。維護者會驗證個 CID 同埋將佢加入網絡註冊表。
 
 當你有一個本地 kubo daemon 行緊嗰陣，移除 `--mock` 就可以發佈真實嘅 IPFS CID。
 

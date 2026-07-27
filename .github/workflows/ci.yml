@@ -25,6 +25,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r tools/seed_generator/requirements.txt
           pip install -r llm_wiki_engine/requirements.txt
+          # PII anonymizer deps — needed for the safety gate test below.
+          # Heavy native deps (opencv-python, mediapipe), but the safety gate
+          # is the one thing CONTRIBUTING.md promises hardest, so it must have CI coverage.
+          pip install -r tools/pii_anonymizer/requirements.txt
 
       - name: P0 — Seed Generator
         run: python tools/seed_generator/generate_seed.py
@@ -142,3 +146,12 @@ jobs:
       - name: Cross-compat — P0 validator on P2-resolved package
         run: |
           python tools/seed_generator/validate_seed.py --path /tmp/ci_resolved
+
+      - name: PII safety gate (face detection + blur + dep-absence refusal)
+        run: |
+          # The safety gate is the one thing CONTRIBUTING.md promises hardest
+          # ("code-enforced, no bypass"). This test feeds a synthetic face
+          # through anonymize_image() and asserts it's detected + blurred,
+          # then asserts SafetyError raises when mediapipe is hidden.
+          # A refactor that silently breaks blurring must fail CI here.
+          python tools/pii_anonymizer/test_safety_gate.py

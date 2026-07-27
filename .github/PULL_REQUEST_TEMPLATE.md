@@ -52,7 +52,7 @@ I ran the full local CI suite (see [CONTRIBUTING.md § Testing Requirements](../
 
 - [ ] I have read and agree to the CLA terms
 
-> ℹ️ Term 2 is an **explicit licence grant** (corrected from the earlier "retains the right" wording, which was a legal nullity). If you have questions about the grant, email <cto@goldmanglobal.com.au> **before** ticking the box.
+> ℹ️ Term 2 is an **explicit licence grant**, which is what dual licensing requires. This wording has not yet been reviewed by a solicitor — if you have questions, email <cto@goldmanglobal.com.au> **before** ticking the box.
 
 ---
 
