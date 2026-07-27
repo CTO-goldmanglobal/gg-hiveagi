@@ -79,7 +79,7 @@ publish is AGPL.
 
 **Secondary CTA** (text link):
 ```
-Read the research
+See how it works
 ```
 → scrolls to Section 3 (How it works)
 
@@ -267,6 +267,101 @@ cto@goldmanglobal.com.au
 | **Imagery** | Real artifacts over stock. Show actual CIDs, actual frontmatter, actual `audit_log` comments as visual texture. They're credibility. |
 | **Motion** | Minimal. Hero animation only. No scroll-triggered fade-ins on every section. |
 
+### 4.1 Design tokens (numbers, not adjectives)
+
+These are the values the designer builds against. If Forge uses different values, **use Forge's values** — this page extends Forge, not replaces it. Where Forge doesn't define a value, use these.
+
+**Palette** (verified for contrast — see §4.3):
+```
+--base-surface:     #0E1A2B   (deep navy base)
+--elevated-surface: #16263D   (cards, raised panels)
+--border:           #1F3047   (card borders, dividers)
+--body-text:        #E8EDF2   (on base surface)
+--muted-text:       #9AA7B4   (intros, footnotes, placeholders)
+--accent:           #E8A33D   (gold — see usage rule below)
+--accent-hover:     #F0B85C   (lighter gold for hover)
+--accent-on-gold:   #0E1A2B   (text on accent backgrounds — navy)
+```
+
+**Accent usage rule (concrete, not "sparingly")**:
+Accent gold appears on exactly these elements and nowhere else:
+- Hero eyebrow text
+- The `● LIVE` pill (text navy `#0E1A2B` on gold background)
+- Primary CTA background
+- All `:hover` states (link underlines, card borders, button backgrounds)
+- Active nav link bottom-border
+
+Count of accent instances **above the fold: ≤ 3**. The page should not look gold-dominant; it should read navy with gold punctuation.
+
+**Type ramp** (desktop / mobile):
+```
+Eyebrow (small caps):  13px / 12px, letter-spacing 0.08em, weight 600
+H1 (hero):             56px / 36px, weight 700, line-height 1.1
+H2 (section):          40px / 28px, weight 700, line-height 1.15
+H3 (card title):       22px / 20px, weight 600, line-height 1.3
+Body:                  18px / 16px, line-height 1.6
+Meta row (mono):       14px / 13px
+Footnote (italic):     14px / 13px
+```
+
+**Spacing scale** (8px base):
+```
+4, 8, 16, 24, 32, 48, 64, 96, 128
+Section vertical padding: 96px desktop / 64px mobile
+Card internal padding: 32px desktop / 24px mobile
+```
+
+**Layout**:
+```
+Max content width:   1200px
+Max full-bleed:      1440px
+Card grid gap:       24px desktop / 16px mobile
+Breakpoints (Webflow defaults):
+  Desktop:  ≥992px
+  Tablet:   768–991px
+  Mobile:   480–767px
+  Small:    ≤479px
+```
+
+### 4.2 Interactive states (every clickable element)
+
+```
+Primary CTA (e.g. "Star on GitHub"):
+  Default:  bg accent #E8A33D, text #0E1A2B, padding 16px 32px, border-radius 6px
+  Hover:    bg accent-hover #F0B85C, translateY(-2px), 200ms ease
+  Active:   translateY(0), bg accent #E8A33D
+  Focus:    2px outline #E8A33D, outline-offset 2px (visible ring — never outline:none)
+  Disabled: bg #3A4A5C, cursor not-allowed (not used on this page)
+
+Text links (inline + section CTAs):
+  Default:  color body-text #E8EDF2, underline-offset 3px
+  Hover:    color accent #E8A33D, underline 1px
+
+Project cards:
+  Default:  border 1px #1F3047
+  Hover:    border 1px accent #E8A33D, translateY(-2px), 200ms ease (no scale)
+  Placeholder cards (Cards 2, 3): NO hover lift — they're not actionable. Just border color shift on hover.
+
+Nav "Research" link:
+  Default:  matches Forge nav style
+  Active (on /research): color accent #E8A33D, 2px bottom-border accent
+```
+
+**Nav chrome stays identical across Forge and Labs pages** (same logo, same nav component). Only the active-state color of the "Research" link shifts to gold. Logo does not change. This is intentional: Labs is a peer brand, not a separate site.
+
+### 4.3 Accessibility (beyond reduced-motion)
+
+This page sells credibility to a technical audience — many use screen readers, keyboard nav, or high-contrast mode. A11y is brand-defensive, not optional.
+
+- **Color contrast (WCAG AA):** all body text ≥ 4.5:1 against its background. **Test accent-on-base contrast** — gold `#E8A33D` on navy `#0E1A2B` ≈ 6.8:1 (passes for large text; verify for body). If accent fails for small text, accent is for **large text and non-text only**; the `● LIVE` pill text must be navy-on-gold (not gold-on-navy).
+- **Hero animation** (`<video>`): `aria-hidden="true"` — it's decorative; the H1 + subhead carry meaning. Must honor `prefers-reduced-motion` → swap to static still. Must **not** autoplay audio (none planned). Attributes: `autoplay muted loop playsinline preload="auto"` on hero; `preload="none"` for any below-fold video.
+- **Pipeline diagram (SVG):** not decorative — carries 4 named stages. Needs `<title>`, `<desc>`, `role="img"`. The 4 stage descriptions below it must be real DOM text (not embedded inside the SVG).
+- **Comparison table:** real `<table>` with `<th scope="col">` / `<th scope="row">`. Mobile: keep it a table — allow horizontal scroll if needed, or stack each row as "Dimension / Corporate / Labs" triplets with `data-label`s. Do not reflow into a 2-card pattern that loses row/column semantics.
+- **Star glyph** on `★ Star on GitHub` CTA: `aria-hidden="true"` (decorative). Accessible name = "Star on GitHub".
+- **Skip link:** first focusable element on the page: "Skip to content". (Forge may already have one — verify it works on /research.)
+- **Focus order:** hero CTAs → top-to-bottom. Every interactive element shows a visible focus ring.
+- **`<html lang="en">`** — this page is English-only. (Note: About page is bilingual; /research is not for v1 — see §9 OQ-10.)
+
 ---
 
 ## 5. Wireframe (desktop)
@@ -283,7 +378,7 @@ cto@goldmanglobal.com.au
 │                                                                 │
 │   Goldman Global Research Labs is our open-source R&D arm...    │
 │                                                                 │
-│   [★ Star on GitHub]    [Read the research →]                  │
+│   [★ Star on GitHub]    [See how it works →]                   │
 │                                                                 │
 │   [hero animation: frame → blur → CID]                          │
 │                                                                 │
@@ -328,7 +423,13 @@ cto@goldmanglobal.com.au
 
 **CMS assumption**: whatever Forge uses (the site reads as Webflow/Framer-class). Extend the existing CMS with a "Research" page template — do not introduce a new stack.
 
-**Analytics**: same tag as Forge site. Add a custom event `research_cta_click` with the CTA label, so we can measure which CTAs convert.
+**Analytics**: same tag as Forge site. Add a custom event `research_cta_click` with the CTA label, so we can measure which CTAs convert. *(Platform choice — GA4 vs Plausible — is an open legal question, see §9 OQ-7.)*
+
+**Footer**: reuse the Forge footer (legal links, copyright, contact). Add a **research disclaimer** under the final CTA, before the footer:
+
+> *Hive.AGI is research software. The audit step catches some hallucinations, not all. Validate outputs before any production use.*
+
+This is on-brand with the "honest scope" voice and protects Goldman legally if someone deploys Hive.AGI and gets a bad wiki entry. Link the AGPL `LICENSE` and Forge's privacy policy in the footer.
 
 ---
 
@@ -356,7 +457,7 @@ The page is done when ALL of these are true:
 - [ ] "Research" appears in the main nav across all Forge pages
 - [ ] All 7 sections present, copy matches this doc verbatim
 - [ ] Mobile layout: pipeline stacks vertically, all 4 stages visible without horizontal scroll
-- [ ] Both CTAs in hero work (GitHub link opens repo; "Read the research" smooth-scrolls to Section 3)
+- [ ] Both CTAs in hero work (GitHub link opens repo; "See how it works" smooth-scrolls to Section 3)
 - [ ] All outbound links use the exact URLs in this doc
 - [ ] `cto@goldmanglobal.com.au` is a `mailto:` link
 - [ ] Hero animation has a static fallback for `prefers-reduced-motion`
@@ -364,8 +465,12 @@ The page is done when ALL of these are true:
 - [ ] No purple gradients, no glowing brains, no stock AI imagery
 - [ ] Page loads in <3s on mobile (Lighthouse perf ≥ 90)
 - [ ] Schema.org `Organization` + `SoftwareSourceCode` markup validates
-- [ ] Honest footnote (Section 3) is present and visible — not hidden behind a toggle
+- [ ] Honest footnote (Section 3) is present and visible — not hidden behind a toggle, not lazy-loaded, not behind a "Read more"
 - [ ] Analytics `research_cta_click` event fires on every CTA
+- [ ] **CI badge fallback:** the `<img>` from `github.com/.../badge.svg` has an `onerror` handler that swaps to a static "CI: see repo" label, in case the repo goes private / renamed / the org migrates
+- [ ] **Launch-day link check:** every GitHub URL returns HTTP 200 (run a HEAD-request sweep before declaring done)
+- [ ] **Hero animation a11y:** `<video>` has `aria-hidden="true"`, `autoplay muted loop playsinline`, honors `prefers-reduced-motion`
+- [ ] **Color contrast:** body text ≥ 4.5:1, accent-on-base verified (test with WebAIM contrast checker)
 
 ---
 
@@ -377,13 +482,23 @@ These are NOT for the designer — these are for you (Goldman Global) before/dur
 
 2. **Logo / wordmark for "Research Labs".** Is there an existing Labs logo, or does the designer create one? *Recommendation: typographic wordmark for v1 — "Goldman Global Research Labs" set in the Forge typeface with the gold accent. No custom logo yet.*
 
-3. **Is Labs a legally distinct entity?** Affects footer legal text, privacy policy, and whether the page needs its own legal pages or inherits Forge's. *Recommendation: treat as a division of Goldman Global for v1; reuse Forge legal pages with a Labs-specific contact.*
+3. **~~Is Labs a legally distinct entity?~~** ✅ RESOLVED (per audit): Labs is a **division of Goldman Global**, not a separate entity. The page copy already reflects this ("our open-source R&D arm", "Sydney-based team"), and `about-page-copy.md` confirms "One company, two jobs." Action: `/research` inherits Forge's privacy policy + terms. **Designer: do NOT add a separate "Labs privacy policy" link** — it would 404. Reuse Forge footer legal links. *Still to confirm before launch: the exact legal entity name + ABN for the footer copyright line (see OQ-11).*
 
 4. **Hero animation: real or illustrated?** Real screenshots of the pipeline running (most credible, takes a day to produce) vs clean illustration (faster, less credible). *Recommendation: real. The whole brand is "show the real artifacts."*
 
 5. **What's Project 2 and 3?** The placeholder cards say "Coming." If you have even a rough direction for the next research line, name it (e.g. "On-device perception for privacy-preserving capture"). Empty placeholders feel honest now but will look abandoned in 3 months. *Recommendation: leave as "Coming" for launch; add a real direction within 90 days or remove the placeholders.*
 
 6. **Newsletter / RSS for research updates?** The brand docs explicitly say "no dead signup form." But a real research feed (RSS from GitHub releases, or a Substack) would serve the "contributors & researchers" audience. *Recommendation: add an RSS link to GitHub releases for v1; real newsletter only when you'll commit to posting.*
+
+7. **GDPR vs AU Privacy Act (legal).** The page says "ready for the 2026 Privacy Act" — but open-source projects get **global** traffic. The moment an EU visitor loads a GA4 tag, GDPR applies (consent banner required). *Decision needed before launch:* (a) geo-block analytics, (b) serve a consent banner globally, or (c) switch to a consent-free analytics tool (Plausible / Fathom). Note: positioning brief §6 hints at Plausible preference ("Closer to Plausible Analytics than to Salesforce") — confirm with legal which path.
+
+8. **CLA enforceability (legal/IP).** The repo's `CONTRIBUTING.md` requires contributors to agree to a CLA (Goldman Global retains commercial licensing rights) — but it's a checkbox-on-PR, not a signed agreement. *Decisions needed:* Has an AU lawyer reviewed the CLA? Is checkbox-consent enforceable? What's the IP state of the commits already merged before the CLA checkbox existed? (This is a real legal gap, not a designer concern — but it affects whether the "open a PR" CTA is even safe to promote.)
+
+9. **Webflow project ownership (operational).** Who owns the Webflow project after launch? If the founder built Forge themselves, name the maintainer for `/research`. If an agency built Forge, do they also own `/research`, or is this a new vendor? *Decision affects post-launch maintenance.*
+
+10. **zh-HK /research page (i18n).** The About page is bilingual (English on top, 繁體中文 on bottom). The root repo README has a zh-HK mirror. But `/research` is English-only. A Cantonese visitor arriving from the About Chinese section clicks "See Labs →" and lands in English. *Decision:* is `/research` English-only for v1 (intentional), or should it also be bilingual like About? *Recommendation: English-only for v1; revisit when Labs has a Chinese-speaking research audience.*
+
+11. **Footer legal entity name + ABN (brand/legal).** The footer needs "© 2026 [LEGAL ENTITY NAME]" and optionally an ABN. The repo + site reference "Goldman Global", "Goldman Forge", and "Goldman Global Financial" interchangeably. *Designer cannot build the footer without this.* Confirm the exact registered entity name + ABN before launch.
 
 ---
 
@@ -406,9 +521,9 @@ Hand this doc to the designer. The two below are for you (and anyone who wants t
 
 | Doc | Purpose | URL |
 | :--- | :--- | :--- |
-| **This handoff doc** | The build brief | `brand/HANDOFF-research-page.md` |
+| **This handoff doc** | The build brief — **single source of truth for the /research page. If §3 copy in this doc disagrees with `showcase-page-copy.md`, THIS DOC WINS.** (As of this revision, they're reconciled.) | `brand/HANDOFF-research-page.md` |
 | Positioning brief (strategy) | The "why" behind every choice | `brand/research-labs-positioning-brief.md` |
-| Page copy (source of truth for copy) | If this doc and that one differ on copy, that one wins | `brand/showcase-page-copy.md` |
+| Page copy (earlier draft) | Historical copy source; reconciled with this doc as of [2026-07-27] | `brand/showcase-page-copy.md` |
 | The actual project | Browse what you're showcasing | https://github.com/CTO-goldmanglobal/gg-hiveagi |
 
 ---
@@ -421,6 +536,11 @@ Things to plan for after `/research` ships:
 - A blog / writeup feed for research outputs
 - Cross-linking from Forge case studies to Labs research ("the tech behind this deployment")
 - A Labs-branded GitHub org (currently lives under `CTO-goldmanglobal/gg-hiveagi` — consider `goldman-global-research` org when there's a second project)
+
+**Post-launch ownership** (assign before launch):
+- **Page owner:** [name/role — likely the founder or a designated content owner]
+- **Review cadence:** monthly check that (1) repo URL still resolves, (2) CI badge is green, (3) "honest footnote" still accurate (especially when P2.5 ships — the footnote becomes wrong and must be updated), (4) placeholder cards still appropriate (replace with Project 2 when it exists, or remove if stale).
+- **Update mechanism:** copy changes go through the Webflow CMS — no code deploy needed. Structural changes (new section, new project card) need the designer/developer.
 
 ---
 

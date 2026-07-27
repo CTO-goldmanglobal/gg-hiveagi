@@ -21,7 +21,7 @@
 │   researching human-perspective, decentralized,                 │
 │   audited AI. Everything we publish is AGPL.                    │
 │                                                                 │
-│   [★ Star on GitHub]    [Read the research brief]              │  ← CTAs
+│   [★ Star on GitHub]    [Read the research]                    │  ← CTAs
 │                                                                 │
 │   [subtle frame→blur→CID hero animation]                        │
 │                                                                 │
@@ -56,7 +56,7 @@
 │  THE DIFFERENCE                                                 │
 │                                                                 │
 │  ┌─────────────────────┬─────────────────────┐                  │  ← comparison table
-│  │  Corporate AGI      │  Research Labs       │                  │
+│  │  Corporate AI       │  Research Labs       │                  │
 │  ├─────────────────────┼─────────────────────┤                  │
 │  │  Scraped data       │  Human-curated       │                  │
 │  │  Self-evaluated     │  Dual-LLM audited    │                  │
@@ -146,7 +146,7 @@
 > How it works
 
 **Intro line**:
-> One pipeline. Five stages. Every step is open and inspectable.
+> One pipeline. Four stages. Every step is open and inspectable.
 
 **Pipeline diagram** (horizontal on desktop, stacked on mobile):
 
@@ -180,7 +180,7 @@
 
 **Comparison table**:
 
-| | Corporate AGI labs | Goldman Global Research Labs |
+| | Corporate AI labs | Goldman Global Research Labs |
 | :--- | :--- | :--- |
 | **Data** | Web-scraped, scale over signal | Human-curated, contributor defines value |
 | **Quality** | Model evaluates itself | Independent generator + auditor (different providers) |
