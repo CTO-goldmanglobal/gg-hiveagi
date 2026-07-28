@@ -1,26 +1,23 @@
-# The Living Seed — How HiveAGI Actually Works
+# The Living Seed — Architecture Overview
 
-> The vision that connects every piece of infrastructure.
-> This is the answer to both external auditors and the internal question:
-> "How does this become AGI?"
+> The design vision that connects every component of Project Hive.AGI.
+> This document describes the intended architecture and research direction.
 
 ---
 
 ## The architecture in one sentence
 
-**Local brains (Obsidian + LLM) share tags through a bridge (IPFS), creating a flow of countable human preferences that grows organically through usage.**
-
-That's it. Everything else is implementation.
+**Local nodes (Obsidian vault + LLM engine) process human input into structured tags. These tags are shared through content-addressed exchange (IPFS), creating a measurable flow of human preference signals across a distributed network.**
 
 ---
 
 ## The three layers
 
-### Layer 1: The Brain (local, private, alive)
+### Layer 1: Local Node (private, independently operated)
 
 ```
 ┌─────────────────────────────────────────┐
-│           LOCAL BRAIN                    │
+│           LOCAL NODE                     │
 │                                         │
 │  Obsidian Vault                         │
 │  ├── 00_Inbox/ (raw captures)           │
@@ -31,31 +28,35 @@ That's it. Everything else is implementation.
 │  Powered by: llm_wiki_engine            │
 │  ├── MiniMax M3 (generate tags)         │
 │  ├── DeepSeek V4 Flash (audit tags)     │
-│  └── vision.py (see frames → tag them)  │
+│  └── vision.py (frame analysis → tags)  │
 │                                         │
-│  This brain CHASES:                     │
-│  "Which pair teaches me most?"          │
-│  "You haven't tagged today — 30sec?"    │
+│  Active learning (planned):             │
+│  "Which comparison teaches the most?"   │
 │                                         │
-│  This brain TRACKS:                     │
-│  "Your taste shifted since March"       │
-│  "You disagree with 3 others on this"   │
+│  Longitudinal tracking (planned):       │
+│  "How has this contributor's            │
+│   perspective evolved?"                 │
 └─────────────────────────────────────────┘
 ```
 
-Each contributor has their OWN brain. Their tags. Their preferences. Their beauty standard. Locally processed, locally owned, no central server reading their data.
+Each contributor operates their own node. Their tags, their judgments, their
+preferences — processed locally, owned locally. No central server processes
+their raw data.
 
-**The LLM engine is the brain's cortex** — it processes raw input (video frames, glasses captures, phone photos) into structured tags. Without the LLM, the brain can't think. Without Obsidian, the brain can't remember. Together: memory + cognition = a local intelligence.
+The LLM engine serves as the node's processing layer — it converts raw input
+(video frames, glasses captures, phone photos) into structured tags. The
+Obsidian vault serves as the node's memory layer, storing and cross-linking
+the distilled knowledge.
 
-### Layer 2: The Bridge (shared, content-addressed, trustless)
+### Layer 2: Content-Addressed Exchange (shared, verifiable, trustless)
 
 ```
-         Brain A                    Brain B                    Brain C
+         Node A                     Node B                     Node C
         (Sydney)                   (Hong Kong)                (London)
            │                           │                           │
            └───────────┬───────────────┘───────────────────────────┘
                        │
-                  IPFS BRIDGE
+                  IPFS EXCHANGE
               (p2p_exchange/)
                        │
               Seed Packages flow:
@@ -70,72 +71,94 @@ Each contributor has their OWN brain. Their tags. Their preferences. Their beaut
               └────────────────────┘
 ```
 
-The bridge doesn't store brains. It carries **seeds** — Seed Packages containing tags, judgments, and reasons. Each seed is content-addressed (CID), verifiable, tamper-detectable.
+The exchange layer does not store nodes or raw data. It carries **Seed
+Packages** — structured bundles of tags, judgments, and reasons. Each package
+is content-addressed (CID), verifiable, and tamper-detectable.
 
-**The bridge is the seed-sharing mechanism.** You don't upload your brain. You package the tags your brain produced into a Seed Package, publish the CID, and anyone can plant it in their own brain. Their brain grows from your tags. Your brain grows from theirs.
+Contributors package their node's structured output into a Seed Package,
+publish the CID, and other nodes can import it. No raw media is shared — only
+the structured judgments derived from it.
 
-### Layer 3: The Flow (organic, measurable, alive)
+### Layer 3: Convergence Flow (measurable, organic, growing)
 
 ```
-Seed shared ──→ planted in Brain B ──→ B adds tags ──→ B shares back
+Seed shared ──→ imported by Node B ──→ B adds tags ──→ B shares back
     │                                                    │
-    │              popularity = countable                │
+    │         convergence = countable signal             │
     │                                                    │
     ↓                                                    ↓
-  Brain C plants ──→ C adds tags ──→ C shares ──→ flow grows
+  Node C imports ──→ C adds tags ──→ C shares ──→ network grows
 ```
 
-When multiple brains independently tag the same thing similarly — **that's popularity.** Not YouTube views. Not Instagram likes. **Independent human judgment convergence, countable, traceable.**
+When multiple independent nodes produce similar judgments for the same
+stimulus, that convergence is measurable. It is not view counts or engagement
+metrics — it is **independent human judgment agreement**, countable and
+traceable across the network.
 
-- 3 brains tag "Terracotta Warriors: dramatic, powerful" → emerging signal
-- 50 brains tag it the same way → universal preference
-- 50 brains, 30 say "dramatic," 20 say "sterile" → cultural disagreement (equally valuable)
+- 3 nodes independently tag "Terracotta Warriors: dramatic, powerful" → emerging signal
+- 50 nodes converge on the same judgment → strong preference signal
+- 50 nodes, 30 say "dramatic," 20 say "sterile" → measurable disagreement (equally valuable)
 
-**Popularity is the growth signal.** It tells you the seed is taking root.
+**Convergence is the growth signal.** It indicates whether shared human
+perspectives are emerging across the network — or whether perspectives
+diverge in culturally or individually meaningful ways.
 
 ---
 
-## From seed to fruit — the organic model
+## From seed to wave — the organic model
+
+No single loop produces AGI. What we are looking for is a **wave** — a pattern
+that emerges from many overlapping loops of development, each one complete
+and reviewable, each one adding new signal. One loop is a ripple. Many loops,
+shared across many nodes, build toward a wave that pushes the system closer
+to genuine human-perspective intelligence.
 
 ```
 SEED                    ── what we share (Seed Package with tags)
-  ↓ sun = usage         ── more contributors = more light
-  ↓ water = tags        ── more judgments per contributor = more water
-  ↓ soil = diversity    ── different cultures/domains = richer soil
+  ↓ usage = energy      ── more contributors = more signal
+  ↓ tags = substance    ── more judgments per contributor = richer data
+  ↓ diversity = depth   ── different cultures/domains = broader coverage
   ↓
-SPROUT                  ── first cross-brain convergence detected
-  ↓                     ── "3 independent brains agree on this tag"
+RIPPLE                  ── first cross-node convergence detected
+  ↓                     ── "3 independent nodes agree on this judgment"
   ↓
-GROWING                 ── flow established, tags accumulating
-  ↓                     ── popularity measurable, patterns emerging
+WAVE BUILDING           ── flow established, tags accumulating
+  ↓                     ── convergence measurable, patterns emerging
   ↓
-FRUIT                   ── a universal (or culturally-specific) perspective model
-                          that can predict what a human will find significant
+WAVE                    ── a distributed human-perspective signal strong enough
+                          to predict what a person will find significant,
+                          in context, across domains
 ```
 
-**You cannot skip from seed to fruit.** The auditors wanted proof before sharing. The organic model says: sharing IS how you get proof. The seed has to be in the ground.
+This cannot be rushed or theorized into existence. It has to be grown — one
+loop at a time, shared, measured, repeated. The wave is the cumulative effect
+of many complete loops, not the output of any single one.
 
 ---
 
 ## What flows through the system (tags, not videos)
 
-The video pipeline was always just a **tagging vehicle.** The real product is the tags.
+The video pipeline is one of several **input vehicles** — systems that
+generate structured human judgments. The real output of every vehicle is the
+same: a tag + a reason + a provenance.
 
 ```
-Vehicle (generates tags)          Crop (the tags themselves)
-─────────────────────────         ─────────────────────────
-video clip selection              shot_type: aerial
-glasses capture                   mood: dramatic
-phone photo culling               perspective: first_person
-tour itinerary rating             preference: accepted
-pairwise comparison               reason: "ranks recede into shadow"
-                                  override: model picked B, human picked A
-                                  confidence: model was 90% sure (wrong)
+Input vehicle                    Structured output (what gets shared)
+───────────────────              ───────────────────────────────────
+video clip selection             shot_type: aerial
+glasses capture                  mood: dramatic
+phone photo culling              perspective: first_person
+tour itinerary rating            preference: accepted
+pairwise comparison              reason: "ranks recede into shadow"
+                                 override: model picked B, human picked A
+                                 confidence: model was 90% sure (wrong)
 ```
 
-Every vehicle produces the same crop: **a tag + a reason + a provenance.** The crop is what gets packaged into seeds, shared across the bridge, and counted as popularity.
-
-This is why the Obsidian wiki + LLM engine is the brain — it's the system that PROCESSES tags. And the IPFS exchange is the bridge — it's what SHARES tags. The video pipeline is just one of many vehicles that FEEDS tags into the brain.
+Every vehicle produces structured judgment data. That data is what gets
+packaged into Seed Packages, shared across the exchange, and measured for
+convergence. The Obsidian vault + LLM engine is the processing layer; the
+IPFS exchange is the sharing layer; the video pipeline (and future vehicles)
+are input layers.
 
 ---
 
@@ -145,93 +168,100 @@ A dead brain collects tags passively. A living brain CHASES and TRACKS.
 
 ### CHASE (the brain reaches toward the sun)
 
-The brain actively pursues the most informative tags:
+The node actively surfaces the most informative comparisons:
 
 ```
 "You judged Great Wall clips yesterday.
  Here's a Terracotta Warriors pair where the model is 51% vs 49%.
  Your judgment here teaches the most. 30 seconds?"
 
-"You haven't tagged in 3 days.
- Two clips on WhatsApp. Which for the brochure?"
-
-"Three other brains disagreed on this clip.
- What do YOU see?"
+"Three other nodes disagreed on this clip.
+ What do you see?"
 ```
 
-The chase = active learning. The brain asks for the tags that would change its model the most. Not random clips — the CLOSEST calls, the edge cases, the disagreements.
+Active learning means the system requests the judgments that would most
+improve its model — not random prompts, but the closest calls, the edge
+cases, the disagreements.
 
-### TRACK (the brain grows roots)
+### TRACK (longitudinal measurement)
 
-The brain follows the signal over time:
+The node follows the signal over time:
 
 ```
-"Your taste in lighting shifted since March —
- you now prefer darker, more dramatic shots."
+"Your lighting preference has shifted since March —
+ you now favor darker, more dramatic shots."
 
-"You and Brain B agree on 87% of architecture tags
- but disagree on 60% of food tags. Interesting."
+"You and Node B agree on 87% of architecture tags
+ but disagree on 60% of food tags."
 
-"The model's prediction accuracy on your tags
- improved from 62% to 78% over 200 judgments.
- It's learning you."
+"The model's prediction accuracy on your judgments
+ improved from 62% to 78% over 200 comparisons."
 ```
 
-The track = longitudinal measurement. Not just "what did this human tag" but "how is this human's perspective evolving" and "how does it compare to others."
+Longitudinal tracking measures not just what a contributor judged, but how
+their perspective evolves and how it relates to other nodes in the network.
 
 ---
 
-## This answers both auditors
+## Research direction — not claims
 
-### Claude: "n=1, you can't claim universality"
-**Answer:** We're not claiming it. We're **sharing the seed so usage reveals it.** n=1 is the seed. The bridge carries it to n=2, n=10, n=1000. Universality is measured by popularity (convergence across brains), not asserted. The system is DESIGNED to discover whether universality exists — not to assume it.
+This project is at an early research stage. We are not claiming to have
+demonstrated universal human perspective, construct validity, or AGI. What we
+have built is **infrastructure designed to test whether distributed human
+judgment convergence produces a meaningful signal.**
 
-### OpenAI: "construct validity not established"
-**Answer:** Validity is established **through the flow**, not in isolation. When 50 independent local brains, each processing their own captures with their own LLM, converge on the same tag for the same stimulus — that IS construct validity. It's measured, not theorized. The bridge makes the measurement possible.
+The questions we are exploring:
+- Can human preferences be measured reliably through structured judgment capture?
+- Do independent nodes converge on similar judgments for the same stimuli?
+- Does the signal transfer across domains (e.g., travel → food → architecture)?
+- Where do humans disagree, and is that disagreement predictable by culture,
+  age, or context?
 
-### Both: "stop building, start testing"
-**Answer:** The testing IS the sharing. Build the bridge, share the seed, let the flow reveal the answer. A seed in a lab can't prove it'll grow. A seed in the ground proves itself.
+These questions can only be answered through deployment and measurement —
+not through isolated analysis. The infrastructure exists to run the
+experiment. The experiment requires contributors.
 
 ---
 
-## What already exists (we're closer than the auditors think)
+## What already exists
 
 | Component | Role | Status |
 |:---|:---|:---|
-| `llm_wiki_engine/` | The cortex — processes input → tags | ✅ Working |
-| Obsidian vault | The memory — stores tags locally | ✅ Structure built |
-| `p2p_exchange/` | The bridge — shares seeds via IPFS | ✅ Working |
-| `tools/seed_generator/` | The seed packager | ✅ Working |
-| `videogen/clip_pool/judge.py` | Tagging vehicle #1 (video selection) | ✅ Working |
-| `videogen/provenance.py` | Stimulus vs judgment separation | ✅ Working |
+| `llm_wiki_engine/` | Processing layer — converts input to structured tags | ✅ Working |
+| Obsidian vault | Memory layer — stores and cross-links tags locally | ✅ Structure built |
+| `p2p_exchange/` | Exchange layer — shares Seed Packages via IPFS | ✅ Working |
+| `tools/seed_generator/` | Packaging — bundles tags into shareable seeds | ✅ Working |
+| `videogen/clip_pool/judge.py` | Input vehicle #1 — video clip judgment capture | ✅ Working |
+| `videogen/provenance.py` | Provenance gate — separates stimulus from judgment | ✅ Working |
 | `obsidian_plugin/` | Local brain interface | ✅ Scaffolded |
 
-**What's missing:**
-- The CHASE (active learning — "ask the most informative question")
-- The TRACK (longitudinal measurement — "how is this brain evolving?")
-- The FLOW counter (popularity measurement — "how many brains converged?")
-- More vehicles (WhatsApp pairwise, glasses capture, photo culling)
+**What's in development:**
+- Active learning (surface the most informative comparisons)
+- Longitudinal tracking (measure how perspectives evolve over time)
+- Convergence measurement (count cross-node agreement)
+- Additional input vehicles (pairwise comparison, glasses capture, photo culling)
 
-But the brain + bridge + seed infrastructure is **already built.** The flow just needs to start.
+The core infrastructure — processing, memory, exchange, packaging, provenance — is operational. The next phase is deployment: getting the system into contributors' hands and measuring what emerges.
 
 ---
 
 ## The one command that starts the flow
 
 ```bash
-# Package your brain's tags into a seed
+# Package your node's structured tags into a seed
 python tools/seed_generator/generate_seed.py
 
-# Share the seed through the bridge
+# Share the seed through content-addressed exchange
 python -m p2p_exchange publish --package seed_output/seed_goldman_20260729/
 
-# Another brain plants it
+# Another node imports it
 python -m p2p_exchange resolve --cid <CID>
 
-# Their brain grows from your tags
-# Their tags flow back
-# The flow begins
+# Their node processes your tags alongside their own
+# Their tags flow back through the exchange
+# Convergence becomes measurable
 ```
 
-The seed is in the repo. The bridge is built. The brain is alive. 
-**Plant it.**
+The infrastructure is built. The exchange is operational. What comes next is
+deployment — and the wave of signal that emerges from many independent loops,
+shared, measured, and accumulated over time.

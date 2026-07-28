@@ -12,26 +12,24 @@
 
 ## 🎯 Vision
 
-> The AGI built by big tech is computers training computers, ultimately serving the logic of computers.
-> The AGI we are building has humans contributing human perspectives, ultimately serving the diverse values of humanity.
+> Most AI systems today learn from data scraped from the internet. We are exploring a different foundation: structured human judgment — what people notice, value, and choose — as the primary signal for machine intelligence.
 
-The end goal of **Project Hive.AGI** is not a centralized super-AI, but a **distributed, open-source "human-perspective knowledge symbiosis network" maintained jointly by human nodes around the world.**
+**Project Hive.AGI** is an open-source research initiative building a **distributed "human-perspective knowledge network."** Rather than a single centralized model trained on aggregated data, the project envisions a network of independent local nodes — each processing human input through a private LLM engine and sharing structured knowledge through content-addressed exchange.
 
-Anyone can use their own devices (glasses, phones, computers, industrial sensors) to contribute "human-perspective data" from their area of expertise, and through the LLM Wiki, distill this data into structured knowledge that can be exchanged and synthesized.
+Anyone can use their own devices (glasses, phones, computers, industrial sensors) to contribute human-perspective data from their area of expertise. Through the LLM Wiki, this data is distilled into structured knowledge that can be exchanged, verified, and synthesized across the network.
 
 ### The Living Seed
 
-This project is a seed — not a finished product, but the starting condition
-for a system that grows through use.
+This project is best understood as a seed — not a finished product, but the
+starting condition for a system designed to grow through use.
 
-- **The brain** = Obsidian vault + LLM engine (local, private, each contributor owns their own)
-- **The bridge** = IPFS Seed Packages (shared, content-addressed, verifiable)
-- **The flow** = tags and judgments moving between brains, creating a measurable signal of human preference convergence
+- **Local nodes** — each contributor runs a private Obsidian vault + LLM engine that processes their own input into structured tags
+- **Content-addressed exchange** — Seed Packages are shared via IPFS, verifiable and tamper-resistant
+- **Measurable convergence** — when independent nodes produce similar judgments for the same stimulus, that convergence is countable and traceable
 
-When multiple independent local brains converge on the same judgment for the
-same stimulus, that convergence is measurable. It's not views or likes — it's
-**independent human judgment agreement**, countable and traceable. That's how
-we know the signal is real.
+This is not view counts or engagement metrics. It is **independent human
+judgment agreement** — a different kind of signal, designed to reveal whether
+shared human perspectives emerge organically across a distributed network.
 
 See [`docs/THE-LIVING-SEED.md`](./docs/THE-LIVING-SEED.md) for the full
 architecture.
@@ -39,14 +37,14 @@ architecture.
 ### From the Founder
 
 I started this project with a simple conviction: the best ideas are simple
-and clean. I'm not a career AI researcher — I'm a builder who believes that
-human perspective, not scraped data, should be the foundation of machine
-intelligence. This repository is my attempt to build that foundation in the
-open, one complete loop at a time.
+and clean. My background is in building businesses, not academic AI research
+— but I believe that human perspective, not scraped data, is the right
+foundation for machine intelligence. This repository is an attempt to build
+that foundation in the open, one complete loop at a time.
 
-I'm looking for collaborators who share this frequency — researchers,
-engineers, and domain experts who want to build human-perspective AI from the
-ground up, not top-down. If that resonates, reach out.
+I'm looking for collaborators who share this direction — researchers,
+engineers, and domain experts who want to explore human-perspective learning
+from the ground up. If that resonates, reach out.
 
 ---
 
@@ -173,9 +171,11 @@ the research, the research makes the commercial modules better.
 | **[Clip Pool + Judge](./videogen/clip_pool/)** | Explore China Holiday | ✅ Circle #1 | Stock footage → LLM content tags → opencv metrics → human judgment → seed. First complete tagging loop. Provenance-gated. |
 | **[Tour Video Finish](./.agents/skills/tour-video-finish/)** | Explore China Holiday | ✅ Draft v1 | VO (MiniMax TTS) + music mix + subtitle burn + brand end card + logo watermark. M3 vision QA audited. |
 
-> **Vision:** AI glasses capture → Forge commercial modules produce client value →
-> Labs research layer absorbs "beauty definition" data → AGI learns what
-> humans find worth recording, not what computers can scrape.
+> **How the two connect:** Forge commercial modules produce client value and
+> generate structured human-perspective data (what people judge as beautiful,
+> important, or worth recording). Labs research explores whether this signal,
+> aggregated across contributors and domains, can form the basis of a
+> human-perspective knowledge network.
 
 ---
 
@@ -221,4 +221,4 @@ is the irreducible unit this entire network is built from.
 
 **In one sentence**:
 
-> Let computers learn how to understand humans, rather than humans learning how to adapt to computers.
+> Exploring whether machines can learn human perspective through structured judgment — not by scraping data, but by earning it one decision at a time.
