@@ -1,0 +1,66 @@
+# Clip Pool keyword config — Legends of China Warriors (circle #1)
+#
+# Drives `python -m videogen.clip_pool fetch --config <this_file>`
+# Source: explore_china_holiday/tours/legends-of-china-warriors/FOOTAGE-SHOT-LIST.md
+#
+# PROVENANCE: this pool is stock-sourced. The raw .mp4 clips are for the Forge
+# commercial Reel ONLY — blocked from Labs by videogen/provenance.py. The human
+# JUDGMENT layer (accept/reject + reason, recorded in Step 2) is Labs-eligible
+# hybrid seed, tagged with this source_type. See docs/LOOP-STRATEGY.md.
+
+tour: legends-of-china-warriors
+source_type: stock:pexels
+candidates_per_keyword: 4
+orientations:
+  - landscape
+  - portrait
+
+shots:
+  - id: shot1_hook
+    label: "Great Wall at dawn (hook)"
+    keywords:
+      - "great wall of china fog"
+      - "great wall sunrise"
+
+  - id: shot2_beijing
+    label: "Beijing imperial — Tiananmen + Forbidden City"
+    keywords:
+      - "tiananmen square"
+      - "forbidden city beijing"
+
+  - id: shot3_great_wall
+    label: "Great Wall hero (hand + wide)"
+    keywords:
+      - "great wall walking"
+      - "great wall china landscape"
+
+  - id: shot4_warriors
+    label: "Terracotta Warriors (emotional peak)"
+    keywords:
+      - "terracotta warriors"
+      - "terracotta army xian"
+
+  - id: shot5_water_towns
+    label: "Water towns — Suzhou gardens / Wuxi"
+    keywords:
+      - "suzhou garden"
+      - "chinese garden water bridge"
+
+  - id: shot6_tea
+    label: "Hangzhou — Longjing tea + West Lake"
+    keywords:
+      - "chinese tea pouring"
+      - "hangzhou west lake"
+
+  - id: shot7_shanghai
+    label: "Shanghai — Yu Garden + Bund"
+    keywords:
+      - "shanghai bund night"
+      - "yu garden shanghai"
+
+  - id: shot8_trust
+    label: "Trust montage — hotel / train / duck"
+    keywords:
+      - "china bullet train interior"
+      - "peking duck"
+      - "luxury hotel room"

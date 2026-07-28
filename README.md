@@ -19,6 +19,35 @@ The end goal of **Project Hive.AGI** is not a centralized super-AI, but a **dist
 
 Anyone can use their own devices (glasses, phones, computers, industrial sensors) to contribute "human-perspective data" from their area of expertise, and through the LLM Wiki, distill this data into structured knowledge that can be exchanged and synthesized.
 
+### The Living Seed
+
+This project is a seed — not a finished product, but the starting condition
+for a system that grows through use.
+
+- **The brain** = Obsidian vault + LLM engine (local, private, each contributor owns their own)
+- **The bridge** = IPFS Seed Packages (shared, content-addressed, verifiable)
+- **The flow** = tags and judgments moving between brains, creating a measurable signal of human preference convergence
+
+When multiple independent local brains converge on the same judgment for the
+same stimulus, that convergence is measurable. It's not views or likes — it's
+**independent human judgment agreement**, countable and traceable. That's how
+we know the signal is real.
+
+See [`docs/THE-LIVING-SEED.md`](./docs/THE-LIVING-SEED.md) for the full
+architecture.
+
+### From the Founder
+
+I started this project with a simple conviction: the best ideas are simple
+and clean. I'm not a career AI researcher — I'm a builder who believes that
+human perspective, not scraped data, should be the foundation of machine
+intelligence. This repository is my attempt to build that foundation in the
+open, one complete loop at a time.
+
+I'm looking for collaborators who share this frequency — researchers,
+engineers, and domain experts who want to build human-perspective AI from the
+ground up, not top-down. If that resonates, reach out.
+
 ---
 
 ## 🚀 Quick Start (P0 — usable today)
@@ -141,6 +170,8 @@ the research, the research makes the commercial modules better.
 | Module | Client | Status | What it does |
 | :--- | :--- | :--- | :--- |
 | **[ECH Auto-Cut](./explore_china_holiday/)** | Explore China Holiday | ✅ MVP | Turns tourism footage into short-form Reels automatically. Frame selection + English narration script + 9:16 vertical composition. PII safety gate inherited from Labs. |
+| **[Clip Pool + Judge](./videogen/clip_pool/)** | Explore China Holiday | ✅ Circle #1 | Stock footage → LLM content tags → opencv metrics → human judgment → seed. First complete tagging loop. Provenance-gated. |
+| **[Tour Video Finish](./.agents/skills/tour-video-finish/)** | Explore China Holiday | ✅ Draft v1 | VO (MiniMax TTS) + music mix + subtitle burn + brand end card + logo watermark. M3 vision QA audited. |
 
 > **Vision:** AI glasses capture → Forge commercial modules produce client value →
 > Labs research layer absorbs "beauty definition" data → AGI learns what
@@ -170,13 +201,21 @@ the research, the research makes the commercial modules better.
 
 ## 📬 Contact
 
-- **Research collaboration / Commercial licensing**: cto@goldmanglobal.com.au
+- **Research collaboration & partnerships**: cto@goldmanglobal.com.au
+- **Commercial licensing**: [COMMERCIAL_LICENSE.md](./COMMERCIAL_LICENSE.md)
+- **GitHub Discussions**: Open to anyone building on or with human-perspective data
 
 ---
 
 ## 🙏 Acknowledgements
 
-Initiated by [Goldman Global Research Labs](https://goldmanglobal.com.au), with thanks to all open-source contributors participating in the "Human-Perspective Data Contribution Program".
+Initiated by [Goldman Global Research Labs](https://goldmanglobal.com.au) — an
+open-source research initiative exploring how machines can learn human
+perspective through structured judgment, not centralized data scraping.
+
+This project stands on the work of every contributor who tags, judges, and
+shares their perspective. That act — a human deciding what matters and why —
+is the irreducible unit this entire network is built from.
 
 ---
 

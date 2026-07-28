@@ -76,3 +76,13 @@ explore_china_holiday/ech_output/
 
 # VideoGen runtime output
 videogen_output/
+
+# Clip Pool — stock/human footage is never committed (re-fetchable cache).
+# The pool_manifest.json is the durable record; .mp4 files are cache.
+explore_china_holiday/tours/**/pool/
+
+# HiveAGI media storage config (drive paths)
+.hiveagi-media.env
+
+# Tour video build artifacts (intermediate + final, regenerable)
+explore_china_holiday/tours/**/output/

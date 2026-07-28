@@ -1,0 +1,61 @@
+{
+  "missed_problems": [
+    "No schema/contract validation between stages (LLM tags flow straight into the cutter, so non-deterministic model output silently corrupts downstream cuts and is the likely root cause of the wrong outro)",
+    "No observability: per-stage latency, cost, and error budgets are untracked, so the 16s desync was only caught after the fact instead of via a frame-locked master timeline alarm",
+    "Human judge is an un-SLA'd synchronous bottleneck with no async queue, parallel reviewers, or escalation path — the real bottleneck that won't survive beyond a handful of tours"
+  ],
+  "automation_priorities": [
+    {
+      "rank": 1,
+      "item": "Single-pass render compositor (VO + footage + music + SRT burned in one ffmpeg/compositor call, VO as the master timeline anchor)",
+      "reason": "Eliminates 3 of the 5 reported defects at once: desync, lost subs, and audio mix churn. One deterministic pass is the cheapest ROI in the entire pipeline."
+    },
+    {
+      "rank": 2,
+      "item": "Strict JSON schema gates between every stage (fetch → tag → cut → render) with parser fuzz tests on real stock SRTs/VTTs",
+      "reason": "The 1/8 SRT cue bug and wrong outro are upstream validation failures, not render failures. Schema-locked contracts make the LLM deterministic and catch drift early."
+    },
+    {
+      "rank": 3,
+      "item": "Async human judge queue with SLA, parallel reviewers, and a confidence-based auto-approve threshold from the LLM tagger",
+      "reason": "Human review must be an exception path, not the default. Auto-approve high-confidence cuts; reserve humans for low-confidence/outlier cases."
+    },
+    {
+      "rank": 4,
+      "item": "Asset pre-flight validator (duration, codec, loudness/LUFS, license metadata, checksum) before anything enters the timeline",
+      "reason": "Prevents the 'inspect external assets' lesson from being learned manually every time; turns it into an enforced gate."
+    },
+    {
+      "rank": 5,
+      "item": "M3 QA as a blocking gate with structured auto-fix rules (re-render, swap asset, regenerate outro) feeding back into the orchestrator",
+      "reason": "M3 should not just report — it should drive a closed-loop remediation, capping retries to avoid the 4-iteration audio mix spiral."
+    }
+  ],
+  "scale_risks": [
+    "Stock API rate limits and per-asset licensing cost explode linearly per tour; no caching/dedupe layer mentioned",
+    "LLM token cost and latency grow with tour complexity; no prompt caching or model-tier routing (small model for tags, large only for script)",
+    "Human judge queue becomes the system bottleneck at 100+ tours/day even with parallelism; cost-per-review will dominate",
+    "M3 QA compute cost scales with render minutes; no incremental/sample-based audit strategy disclosed",
+    "Localization: SRT/subs per language multiplies render passes unless architected as parameterized single-pass",
+    "Asset storage growth (raw stock + intermediates + finals) with no retention/cleanup policy will balloon",
+    "No version pinning on LLM/M3 → silent quality regressions when upstream models update",
+    "No render-failure replay or partial-render recovery; one bad stock clip kills the whole tour"
+  ],
+  "cursor_architecture": {
+    "one_command": "tour_url → finished video: ingest validates URL+metadata against schema → parallel stock/audio/sub fetcher with dedupe → asset pre-flight (codec, duration, LUFS, license) → LLM tagger emits schema-locked JSON (temperature=0, pinned model) → async judge queue auto-approves ≥0.85 confidence else human → timeline planner pins VO as master clock and back-derives cuts/sub timings → single-pass compositor (ffmpeg/compositor) renders VO+footage+music+burned subs in one call with LUFS normalization → M3 QA gate runs structured checks and auto-fixes up to 2 retries → orchestrator publishes to storage + logs cost/latency/SLA metrics → returns finished video URL",
+    "key_modules": [
+      "ingest-schema-validator",
+      "asset-fetcher (parallel, cache-aware)",
+      "asset-preflight-validator (duration/codec/LUFS/license/checksum)",
+      "llm-tagger (schema-locked, deterministic, version-pinned)",
+      "judge-queue (async, SLA-bound, confidence-threshold auto-approve)",
+      "timeline-anchor-planner (VO as master clock, derives all cuts/subs)",
+      "single-pass-renderer (ffmpeg/compositor, one-shot overlays+VO+music+subs)",
+      "m3-qa-gate (structured checks + auto-remediation loop)",
+      "orchestrator (durable execution, retries, cost-meter, SLA tracking)",
+      "asset-store (versioned, TTL-managed, deduped)",
+      "observability (per-stage latency/cost/error budgets, alarms)"
+    ]
+  },
+  "verdict": "The pipeline is brittle because it treats stages as a DAG of hopes instead of a schema-validated, frame-locked, single-pass contract — fix the render and contracts first, everything else falls in line."
+}
