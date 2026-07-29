@@ -227,3 +227,76 @@ ECH admin clicks "Generate Video"
 ```
 
 **One click. Tour page in, published video out. Humans only see exceptions.**
+
+---
+
+## Phase 2/3 open questions (flagged by Cursor review, 2026-07-30)
+
+These are NOT Phase 1 blockers. Capture now so they don't become silent drift.
+
+### Q1: How does ECH trigger HiveAGI? (Phase 2)
+
+The doc says "cron or file watcher." Cursor recommends **synchronous shell-out**:
+
+```
+ECH bridge writes brief.yaml
+  → ECH bridge shells out: python -m videogen produce --brief brief.yaml --out result.mp4
+  → blocks until HiveAGI returns (same pattern as Paperclip's 45-min drafting window)
+  → reads result.json
+```
+
+**Why synchronous, not a watcher:** file watchers add failure modes (missed
+events, double-fire on log rotation) for no gain at this scale. The ECH bridge
+already blocks on Paperclip — blocking on HiveAGI is the same pattern. One
+process, one failure mode.
+
+**Decision needed:** confirm this in ECH audit before Phase 2 wiring.
+
+### Q2: The 0.85 threshold is a knob, not a constant (Phase 3)
+
+The doc says "start at 0.85, raise it." That's right, but:
+
+- Must be **explicit config**, not a magic number buried in code
+- Must have an **audit log** — when was it raised, based on what evidence
+- Suggested: `auto_approve_threshold` field in a config row (or `video_jobs`
+  table), with a changelog
+
+Without this, the threshold becomes another silent drift — like the
+Paperclip `$` caps that were set but never enforced. The threshold is the
+human-in-the-loop boundary. It must be visible and auditable.
+
+**Decision needed:** where does this config live? (ECH `video_jobs`? HiveAGI
+config? Both?) — nail down before Phase 3.
+
+### Q3: Analytics must NOT contaminate the knowledge library (Phase 3)
+
+The doc says "feed back to knowledge library (which clips performed best)."
+Cursor correctly flags this:
+
+- The knowledge library is a **fact substrate** (hand-written Markdown from
+  published blog pages — verified destination facts)
+- Analytics is a **performance substrate** (views, retention, enquiries per
+  clip)
+- **Conflating them corrupts both.** A clip that performs well on YouTube is
+  not necessarily a more accurate representation of a destination.
+
+**Cleaner design:** a separate `clip_performance` table:
+
+```
+clip_id → tour_slug → platform → views → retention_pct → enquiries
+```
+
+The `clip_hints` builder in `ingest.py` can consult this table when
+constructing the next `brief.yaml` — "this clip type performed well for AU
+audiences on YouTube, prefer similar." But the knowledge library stays
+factual. Performance data lives alongside it, not inside it.
+
+**Decision needed:** confirm the separation before Phase 3.
+
+---
+
+## Phase 1 status
+
+Phase 1 (H1–H7 HiveAGI, E1–E7 ECH) is **unchanged** by any of the above.
+The seam is locked, the mock works, both repos are pushed. Both seats can
+start building in parallel.
