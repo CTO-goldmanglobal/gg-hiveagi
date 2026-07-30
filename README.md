@@ -158,13 +158,18 @@ Commercial product instances built on the research pipeline. Each solves a real 
 
 ---
 
-## 📄 License
+## 📄 License & Ownership
 
-| Component | License |
-|:---|:---|
-| Code (Python, TypeScript, specs) | [AGPL-3.0](./LICENSE) |
-| Seed Data (contributor knowledge packages) | [CC-BY-NC-SA-4.0](./DATA_LICENSE.md) |
-| Commercial use | [Contact for license](./COMMERCIAL_LICENSE.md) |
+The system operates in two areas with different sharing rules:
+
+| Area | License | Sharing |
+|:---|:---|:---|
+| **Open** (Labs — code, specs, shared tags) | [AGPL-3.0](./LICENSE) / [CC-BY-NC-SA-4.0](./DATA_LICENSE.md) | Shared freely via IPFS by default |
+| **Commercial** (Forge — client work, personal taste models, learned preferences) | [Commercial](./COMMERCIAL_LICENSE.md) | **Owner decides.** Never shared without explicit consent. |
+
+A blogger's learned taste model is their asset. A client's preference data is
+licensed. Sharing is always a human decision — tracked in provenance, enforced
+in code (`videogen/provenance.py`).
 
 ---
 
