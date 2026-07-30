@@ -409,3 +409,40 @@ MORE valuable, not less, because each correction is a high-signal event.
 - **Colibrì:** MoE expert-loading for running huge models on limited RAM
 - **The Living Seed:** local brains share tags through a bridge
 - **The founder's insight:** "seed to fruit takes sun, water, food — share the seed"
+
+---
+
+## Two areas — open vs commercial (model ownership)
+
+Not everything is open source. The system has two areas with different
+ownership and sharing rules:
+
+### OPEN (Labs)
+- Base infrastructure, open source, AGPL-3.0
+- Tags, seeds, patterns shared freely via IPFS by default
+- The research network — anyone can contribute, anyone can use
+
+### COMMERCIAL (Forge)
+- Business assets: client work, personal taste models, learned preferences
+- A blogger's learned pattern is THEIR asset, not the network's
+- A client's preference model is owned by Goldman Forge / licensed to client
+- **Sharing is NEVER automatic. The human must be asked.**
+- Every commercial item entering IPFS must carry explicit `share_consent`
+  with timestamp + reason
+
+```
+OPEN:        share by default → IPFS → network grows
+COMMERCIAL:  ask the human → if yes → IPFS with consent record
+                              if no  → stays local, never leaves the vault
+```
+
+This is the same principle as the blur layer: **the human decides.**
+Default is safe (private). Sharing is a conscious, logged decision.
+
+The gate lives in `videogen/provenance.py`:
+```python
+can_share_to_labs(area="commercial", share_consent=False)  # → False
+assert_share_consent(area="commercial", share_consent=False)  # → raises
+```
+
+Provenance is always tracked. Sharing is always asked. The owner decides.

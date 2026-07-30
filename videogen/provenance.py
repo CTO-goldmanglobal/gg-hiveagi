@@ -37,6 +37,15 @@ SOURCE_STOCK = "stock"
 SOURCE_HUMAN = "human_capture"
 
 
+# Area: which domain a model/tag/seed belongs to.
+# OPEN (Labs)      — open source, AGPL, shared freely via IPFS
+# COMMERCIAL (Forge) — business asset (client or personal), sharing is a
+#                      human decision, always ask. Includes bloggers whose
+#                      personal taste model is their own asset.
+AREA_OPEN = "open"
+AREA_COMMERCIAL = "commercial"
+
+
 def is_stock(source_type: str) -> bool:
     """True if the material originated from a stock library (professional content)."""
     if not source_type:
@@ -49,6 +58,66 @@ def is_human_capture(source_type: str) -> bool:
     if not source_type:
         return False
     return source_type.split(":", 1)[0] == SOURCE_HUMAN
+
+
+# ============================================================
+# Area gate — who owns the model/tag/seed, and can it be shared?
+# ============================================================
+#
+# Two areas:
+#   OPEN (Labs)       — shared freely. Tags, seeds, patterns published
+#                       to IPFS by default. This is the research network.
+#
+#   COMMERCIAL (Forge) — business asset. This includes:
+#                        - Client work (ECH tour videos, real-estate, etc.)
+#                        - Blogger personal taste models (their learned
+#                          preferences are THEIR asset)
+#                        Sharing is NEVER automatic. The human must be asked.
+#                        "Provenance tracked, but sharing decided by the owner."
+#
+# The gate is simple: OPEN shares by default. COMMERCIAL does not.
+# Every COMMERCIAL item that enters IPFS must carry an explicit
+# share_consent field with a timestamp and reason.
+
+
+def can_share_to_labs(area: str, share_consent: bool = False) -> bool:
+    """
+    Can this tag/seed/pattern be published to the open IPFS network?
+
+    Args:
+        area: "open" or "commercial"
+        share_consent: for commercial items, did the owner explicitly consent?
+
+    Returns:
+        True if the item can be shared to the Labs network.
+    """
+    if area == AREA_OPEN:
+        return True
+    if area == AREA_COMMERCIAL:
+        return share_consent  # must be explicitly asked + answered
+    # Unknown area → fail closed
+    return False
+
+
+def assert_share_consent(area: str, share_consent: bool, item_id: str = "") -> None:
+    """
+    Hard assertion for IPFS publish path.
+
+    Raises ShareConsentViolation if a commercial item is being published
+    without explicit consent. This is the "always ask the human" rule,
+    enforced in code.
+    """
+    if area == AREA_COMMERCIAL and not share_consent:
+        raise ShareConsentViolation(
+            f"Cannot publish commercial item{f' ({item_id})' if item_id else ''} "
+            f"to open network without explicit consent. "
+            f"The owner must be asked. See provenance.py § area gate."
+        )
+
+
+class ShareConsentViolation(Exception):
+    """Raised when a commercial item would be published without owner consent."""
+    pass
 
 
 def is_labs_eligible(source_type: str) -> bool:
