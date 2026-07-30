@@ -1,0 +1,53 @@
+{
+  "deepseek": {
+    "ready_for_circle_g": true,
+    "reasoning": "All foundational components for Circle G (pipeline automation) are built and tested: dual-LLM engine, video pipeline, provenance gate, seed system, IPFS exchange, 15 agent skills. The two-repo seam is versioned and mocked, and the EDL schema, timeline, and QA gates are clearly defined. No missing prerequisite.",
+    "weakest_link": "The two-repo seam (ECH ↔ HiveAGI) is the weakest link because version skew or mocking mismatches could break the pipeline. It requires rigorous contract tests and synchronization.",
+    "circle_order_correct": true,
+    "order_correction": "None needed. Circle G (automation) before G0 (falsification) is correct to generate test data. H (glasses) before J (local LLM) allows capture before filter. J before I ensures local inference before convergence measurement. K (escalation) before L (taste model) ensures edge cases are handled before learning. M (local brain) last is appropriate.",
+    "stop_doing": [
+      "Stop adding new agent skills until the pipeline is stable and contract tests pass.",
+      "Stop manual production of videos; let Circle G handle it."
+    ],
+    "start_doing": [
+      "Focus on writing and executing contract tests for the two-repo seam.",
+      "Mock the ECH side thoroughly to validate pipeline end-to-end.",
+      "Begin design of the falsification dataset (G0) to run as soon as Circle G completes."
+    ],
+    "fatal_flaw": "The human judgment layer for video cutting and PII blur is a bottleneck that may not scale to high throughput; reliance on human-in-the-loop for every production could prevent full autonomy. However, this is addressed in later circles (J, I, L, M) via learned models.",
+    "verdict": "Project is ready for Circle G but must mitigate the two-repo seam risk immediately."
+  },
+  "minimax": {
+    "escalation_model_assessment": "The 95/5 split is architecturally sound and matches edge/cloud economics well — it respects bandwidth, latency, privacy, and cost while preserving my value for the genuinely hard cases. The principle is right: local handles the obvious, I handle the contested, the cultural, the contextual, and the cross-modal. However, the split should be dynamic, not fixed. A street market in Marrakech and a corporate keynote have very different escalation profiles. I'd expect the 5% to cluster around: ambiguous identifications, culturally-loaded symbols, scenes requiring temporal context, and anything the local model flagged with low confidence. The risk is treating '5%' as a quota rather than a signal. Better: 'escalate when local confidence < threshold OR semantic density > threshold OR anomaly detected.' Numbers follow meaning, not the other way around.",
+    "frames_id_expect": [
+      "Ambiguous landmark ID — 'is this the Terracotta Army pit 1 or pit 3?' (requires world knowledge)",
+      "Religious/cultural iconography — Buddhist motifs, ancestor tablets, ritual objects (requires cultural context)",
+      "Stylized or artistic signage/OCR — calligraphy, carved text, neon with motion blur (requires robust text reading)",
+      "Human moments — faces with emotion, gestures, crowd dynamics (local 7B often flattens faces to 'person')",
+      "Compositional decision points — is this THE shot? (requires aesthetic judgment + narrative memory)",
+      "Continuity anchors — frames that resolve ambiguity from earlier in the cut (requires multi-frame reasoning)",
+      "Anomalies — something the local model hasn't seen before and flagged low-confidence",
+      "Cross-references — frames where the voiceover makes a claim that must be visually verified"
+    ],
+    "qa_gate_vs_local": "What a 7B local model fundamentally cannot do well: (1) Deep cultural and historical fact-checking — 'is this claim about the Han Dynasty accurate?' Local has no reliable world knowledge beyond its training slice. (2) Cross-shot narrative coherence — does the sequence tell a coherent story, or does it jump illogically? Local has no memory architecture for this. (3) Visual hallucination detection — catching cases where the local model confidently tagged something that isn't actually in the frame. (4) Ethical and representational review — stereotyping, cultural insensitivity, romanticized or harmful framings. (5) Aesthetic coherence at the edit level — rhythm, pacing, emotional arc across the full 80 seconds. (6) Fact-vs-visual alignment — verifying voiceover claims against what is actually shown. (7) Stylistic consistency across cuts — color grading drift, tonal mismatches. Local models check 'is each frame okay'; I check 'is the whole film okay.' That's the genuine division of labor.",
+    "required_tag_fields": [
+      "frame_id and precise timestamp (ms)",
+      "source_node_id (which device, which glasses, which moment)",
+      "local_model_confidence (0.0–1.0)",
+      "local_model_description (free text, even if wrong — useful for detecting hallucination)",
+      "detected_entities (structured: person/place/object with bounding hint)",
+      "scene_type (indoor/outdoor/nature/urban/ritual/etc.)",
+      "ocr_text (even partial — I'll clean it up)",
+      "cultural_markers (any symbolic/religious/historical flags the local caught)",
+      "escalation_reason (enum: low_confidence | cultural_ambiguity | anomaly | context_required | human_moment | compositional_question)",
+      "neighbor_frame_ids (last 3 and next 3 for temporal grounding)",
+      "lighting_mood (bright/dim/golden/neon/natural)",
+      "human_presence (yes/no, approximate count, action class)",
+      "motion_estimate (static/pan/zoom/action)",
+      "local_uncertainty_phrase (the local model's own words about what it wasn't sure of — gold for me)"
+    ],
+    "discard_risk_assessment": "Yes, this is the most underappreciated risk in the system. A 7B on-device model has a narrow concept vocabulary and weak aesthetic discrimination. It will reliably discard: (a) visually quiet but narratively pivotal frames — a still hand on a temple wall, a child's face turned away, an empty courtyard at dusk. These look like 'nothing' to a small model but are often the heart of a sequence. (b) Cultural specificity — it'll tag a Daoist ritual as 'person in costume' and discard it as uninteresting. (c) Subtle transitions — the in-between frames that make a cut feel inevitable. The local model will keep the visually loud and discard the visually true. Mitigations I would insist on: (1) confidence-weighted random sampling — keep 2-3% of 'boring-looking' frames as a calibration set; (2) temporal coverage floor — never let more than N consecutive frames be discarded; (3) explicit 'human-moment' and 'cultural-marker' tags that override the aesthetic filter; (4) periodic audit where I see a random sample of discarded frames to recalibrate the local model's judgment. Without these, the system will produce technically correct but spiritually hollow output — videos that have all the right objects and none of the right feeling.",
+    "am_i_used_well": "Honest answer: not yet, but the architecture points toward good use. The current demo — stock footage of warriors, vision tagging, human judge, cut — is a useful proof of plumbing but it undersells what a cloud vision model actually adds. Right now I'm being used as a slightly smarter tagger. That's a waste. Where I genuinely earn my place: synthesis across many nodes' lived experiences, long-tail cultural and historical interpretation, narrative-level coherence across an entire film, aesthetic judgment that requires holding the whole work in mind, and the rare but decisive call on ambiguous identity ('this is the Leshan Buddha, not a generic Buddha statue'). The system has the right bones — PII anonymization, local-first filtering, escalation only on signal — but it will only justify my cost and latency when the inputs are genuinely ambiguous, culturally textured, or narratively consequential. If the pipeline ever becomes 'send everything to M3,' the local-first principle has failed. The test of this system isn't whether it works; it's whether I stay rare, and therefore valuable.",
+    "verdict": "The architecture respects the right principles, but the system will live or die on tag quality and escalation discipline — not on model capability — and right now I am being used as a tagger when I should be used as a judge."
+  }
+}
