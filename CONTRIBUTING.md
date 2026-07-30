@@ -32,8 +32,11 @@ Hive.AGI collects **human-perspective data**, which means contributions can carr
 
 **Location data:** Seed Package entries carry `gps_lat` / `gps_lng`. Do not publish packages containing your home, your children's school, or any location that reveals a private routine. Coarsen or drop the coordinates for anything near a sensitive location — an approximate suburb is usually enough for the knowledge to be useful.
 
-**Anonymisation:** Both capture paths enforce face + plate blurring.
-- The **auto-vision path** (`python -m llm_wiki_engine process-video`) runs real MediaPipe face detection + OpenCV edge-based plate detection, with no `--skip-blur` bypass (spec §6, code-enforced).
+**Anonymisation:** Face + plate blurring is a **human-controlled layer** — default ON, toggleable with a reason.
+- **Default:** blur is ON. Every frame passes through MediaPipe face detection + OpenCV plate detection before tagging or sharing. This protects bystanders in public.
+- **Human toggle:** the contributor can turn blur OFF for a specific capture by providing a reason (e.g., "my family, we consent" / "guide with permission"). The toggle is per-capture and logged as part of the seed. It reverts to ON for the next frame.
+- **Safety fallback:** if the blur detector fails (model error, missing dependency), the frame is discarded — it never reaches the LLM or the vault. The fallback is code-enforced; the toggle is human-controlled.
+- **What never changes:** regardless of blur state, only **tags** (text) are shared via IPFS. No frame — blurred or unblurred — ever leaves the device.
 - The **manual curation path** (`tools/video_ingest/capture_helper.py`) keeps PII risk at zero — you choose each frame and write only text.
 For still images you handle yourself, run `python tools/pii_anonymizer/anonymize.py <image>` before any upload or LLM call.
 

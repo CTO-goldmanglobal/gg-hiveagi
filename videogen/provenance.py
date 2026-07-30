@@ -2,8 +2,12 @@
 Provenance gate — the seam that keeps the Labs human-perspective thesis honest.
 
 This is the one place in the whole project where the core thesis can be
-silently corrupted, so it is enforced in CODE, not policy — exactly like the
-PII blur gate. There is no bypass flag. There is no `--allow-stock-for-labs`.
+silently corrupted, so it is enforced in CODE, not policy.
+
+(Note: the PII blur layer uses a different model — it is a human-controlled
+layer with a default-ON safety position and a human toggle with reason
+logging. The provenance gate has no toggle — stock is always blocked from
+Labs. See docs/HYBRID-EDGE-ARCHITECTURE.md § Layer 0.5.)
 
 The rule:
   - Stock footage (professional content optimized for an audience) is FINE for

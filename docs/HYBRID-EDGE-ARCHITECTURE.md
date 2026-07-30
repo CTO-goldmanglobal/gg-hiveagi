@@ -57,28 +57,54 @@ No processing happens here — just raw capture.
 
 Hardware: AI glasses (camera + Bluetooth/WiFi to phone)
 
-### Layer 0.5: PII Blur (mobile) — code-enforced, no bypass
+### Layer 0.5: PII Blur (mobile) — human-controlled layer, default ON
 
 ```
-Every frame from glasses passes through PII blur BEFORE anything else.
+Every frame from glasses passes through the blur layer.
 
-blur_faces.py → MediaPipe FaceDetector → faces blurred
-blur_plates.py → OpenCV edge detector → plates blurred
+DEFAULT: blur ON (protect bystanders in public)
+  blur_faces.py → MediaPipe FaceDetector → faces blurred
+  blur_plates.py → OpenCV edge detector → plates blurred
 
-IF blur succeeds → blurred frame passes to Layer 1
-IF blur fails → frame DISCARDED (never stored, never tagged, never shared)
+HUMAN TOGGLE: the human can turn blur OFF for a specific capture
+  IF human toggles off → they MUST provide a reason
+    Examples: "my family, we consent" / "guide with permission" / "my own face"
+  The toggle + reason is LOGGED as part of the seed
+  The toggle is per-capture, not global — reverts to ON for the next frame
 
-No --skip-blur. No bypass. This is the iron rule (spec §6, Circle B).
+IF blur succeeds (ON or human-toggled) → frame passes to Layer 1
+IF blur fails (detector error) → frame DISCARDED (safety fallback)
 ```
 
-**Privacy guarantee:** the raw frame is deleted after blur. The blurred frame
-stays local (optional, encrypted). Only the **tag** (text) ever leaves the
-phone via IPFS. No face, no plate, no identifying image is ever stored in the
-vault or shared with the network.
+**Design principle:** consent is a human judgment, not a machine rule. The
+machine cannot know if the person in frame consented. The human can. The blur
+layer respects that — default ON (safe), human can toggle OFF with a reason.
+
+**The blur decision is itself perspective data.** "I blurred because strangers
+were present" vs "I didn't blur because these are my kids" — that's a privacy
+judgment that varies by culture, context, and individual. That's human
+perspective, captured as part of the seed.
+
+**What still can't happen:** the frame (blurred or unblurred) is NEVER shared
+via IPFS. Only the tag (text) leaves the device. The blur layer protects what
+the LLM sees and what stays local — the tag never contains face data regardless.
+
+**Privacy chain:**
+```
+Raw frame (has faces)
+  ↓
+Blur layer (default ON, human can toggle OFF + reason)
+  ↓
+Processed frame stays LOCAL (phone storage, encrypted)
+  ↓
+Tag (text only) → Obsidian vault → IPFS share
+  ↓
+Only text leaves the device. No frame, no face, ever.
+```
 
 **Existing code:** `tools/pii_anonymizer/blur_faces.py` + `blur_plates.py`
-(already built, CI-tested). For mobile deployment, these run via MediaPipe
-mobile + OpenCV mobile — same logic, mobile runtime.
+(already built, CI-tested). The toggle adds a human-gate layer on top — the
+blur logic is unchanged, the human just decides whether it applies.
 
 ### Layer 1: Filter (mobile, tiny LLM 1-3B) — the attention layer
 
