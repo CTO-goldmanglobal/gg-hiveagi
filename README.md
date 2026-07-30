@@ -118,14 +118,33 @@ For real-mode setup (MiniMax M3 + DeepSeek APIs), see [`llm_wiki_engine/.env.exa
 
 ## 🧩 Roadmap
 
-| Phase | Component | Status |
+The project is built as a series of "small circles" — each one a complete,
+reviewable loop. See [`docs/UNIFIED-ROADMAP.md`](./docs/UNIFIED-ROADMAP.md)
+for the full circle map (A through M).
+
+| Phase | Circles | Status |
 |:---|:---|:---|
-| **P0** | Seed Package system + Obsidian vault setup | ✅ Complete |
-| **P1** | LLM Wiki Engine (dual-LLM, mock + real verified) | ✅ Complete |
-| **P2** | IPFS P2P exchange + Obsidian plugin | ✅ Complete |
-| **Forge** | Video clip pool + judgment capture + finishing | ✅ Circle #1 complete |
-| **Research** | Pairwise preference testing + convergence measurement | 🔬 Next |
-| **Capture** | Glasses / phone first-person capture | 📋 Planned |
+| **Foundation** | A-F (seed system, LLM engine, IPFS, safety, video pipeline, judgment capture) | ✅ Complete |
+| **Automation** | G (one-command pipeline), G0 (falsification experiment) | 🔄 In progress |
+| **Human capture** | H (glasses → phone tagging), J (local LLM filter) | 📋 Planned |
+| **Network** | I (multi-human convergence), K (edge→cloud escalation) | 📋 Planned |
+| **Autonomy** | L (learned taste model), M (autonomous local brain) | 🔬 Vision |
+
+### Hybrid edge architecture
+
+The system is designed as a four-layer brain, inspired by human cognition:
+
+- **Layer 0:** Glasses capture (passive sensor)
+- **Layer 1:** Mobile tiny LLM filters — discards 95%, tags 5%
+- **Layer 2:** Mobile/cloud understands — tags significant moments, escalates uncertain ones
+- **Layer 3:** Cloud large LLM reasons — only for 5-10% of uncertain cases
+- **Layer 4:** IPFS shares compact tags — convergence measured across nodes
+
+95% of input is processed locally (free, private, instant). Only uncertain
+cases reach the cloud. Tags — not raw video — are shared across the network.
+
+See [`docs/HYBRID-EDGE-ARCHITECTURE.md`](./docs/HYBRID-EDGE-ARCHITECTURE.md)
+and [`docs/HARDWARE-SPEC.md`](./docs/HARDWARE-SPEC.md) for details.
 
 ### Commercial modules (Goldman Forge)
 

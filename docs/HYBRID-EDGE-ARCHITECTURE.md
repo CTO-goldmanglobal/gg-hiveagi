@@ -57,6 +57,29 @@ No processing happens here — just raw capture.
 
 Hardware: AI glasses (camera + Bluetooth/WiFi to phone)
 
+### Layer 0.5: PII Blur (mobile) — code-enforced, no bypass
+
+```
+Every frame from glasses passes through PII blur BEFORE anything else.
+
+blur_faces.py → MediaPipe FaceDetector → faces blurred
+blur_plates.py → OpenCV edge detector → plates blurred
+
+IF blur succeeds → blurred frame passes to Layer 1
+IF blur fails → frame DISCARDED (never stored, never tagged, never shared)
+
+No --skip-blur. No bypass. This is the iron rule (spec §6, Circle B).
+```
+
+**Privacy guarantee:** the raw frame is deleted after blur. The blurred frame
+stays local (optional, encrypted). Only the **tag** (text) ever leaves the
+phone via IPFS. No face, no plate, no identifying image is ever stored in the
+vault or shared with the network.
+
+**Existing code:** `tools/pii_anonymizer/blur_faces.py` + `blur_plates.py`
+(already built, CI-tested). For mobile deployment, these run via MediaPipe
+mobile + OpenCV mobile — same logic, mobile runtime.
+
 ### Layer 1: Filter (mobile, tiny LLM 1-3B) — the attention layer
 
 ```
