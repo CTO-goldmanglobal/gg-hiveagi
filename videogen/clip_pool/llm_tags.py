@@ -38,6 +38,8 @@ from typing import Dict, Any, List, Optional
 
 from llm_wiki_engine.llm_json import extract_json
 
+from .models import resolve_local_path
+
 TAG_PROMPT = (
     'Tag this video frame for a tourism video editor. '
     'Return JSON only, no reasoning:\n'
@@ -222,9 +224,7 @@ def pretag_pool(manifest: Dict[str, Any], pool_dir: Path,
             if cid in cache and not force:
                 continue
             total += 1
-            local = pool_dir.parent / cand["local_path"]
-            if not local.exists():
-                local = pool_dir / cand["local_path"].replace("pool/", "", 1)
+            local = resolve_local_path(pool_dir, cand["local_path"])
             if not local.exists():
                 print(f"  ⚠️  {cid}: file missing, skipping")
                 continue

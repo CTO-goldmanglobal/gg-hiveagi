@@ -22,6 +22,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
+from .models import MANIFEST_SCHEMA_VERSION
+
 try:
     import yaml  # type: ignore
 except ImportError:  # pragma: no cover
@@ -278,7 +280,7 @@ def fetch_pool(config_path: Path, pool_dir: Path,
         print(f"  → {len(shot_candidates)} candidates for {shot_id}\n")
 
     manifest = {
-        "schema_version": 1,
+        "schema_version": MANIFEST_SCHEMA_VERSION,
         "tour": cfg["tour"],
         "source_type": source_type,
         "fetched_at": _now_iso(),

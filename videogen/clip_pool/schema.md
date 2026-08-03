@@ -41,6 +41,17 @@ re-fetchable cache.
 
 ---
 
+## Canonical schema (in code)
+
+The shapes below are documented as prose, but the **enforced** schema lives in
+[`models.py`](./models.py) as pydantic v2 models: `Candidate`, `Shot`,
+`PoolManifest`, `ClipTag`, `Verdict`. If the prose and the code disagree, the
+code is right. `models.py` is also the home of `MANIFEST_SCHEMA_VERSION` (the
+single source of truth for `schema_version`) and `resolve_local_path()` (the
+single path-resolution helper used by every stage).
+
+---
+
 ## pool_manifest.json
 
 ```json
@@ -185,6 +196,24 @@ themselves." That distinction is the point of keeping `source_type` on the
 judgment row.
 
 See `docs/LOOP-STRATEGY.md` § "The hybrid seed" for the full argument.
+
+---
+
+## clip_metrics.json — measured visual signals (cache)
+
+Written by `judge.py` (lazily, on first run) and read by the gallery. Keyed by
+`candidate_id`, value is the `measure_clip()` output dict (brightness, contrast,
+motion_score, shake_score, …). See `metrics.py` and the `ClipTag`/metrics shape
+in `models.py`. **Note:** this file is keyed by `candidate_id` only and carries
+**no `source_type`** — recover provenance by joining to `pool_manifest.json`.
+
+## clip_tags.json — MiniMax vision tags (cache)
+
+Written by `llm_tags.py` (`pretag` stage) and read by the gallery + `g0_experiment`.
+Keyed by `candidate_id`, value is `{"tags": <ClipTag>, "frames_tagged": N}`. The
+tag dimensions (`shot_type`, `mood`, `commercial_grade`, …) are constrained by
+`Literal` enums in `models.py` — the same vocabulary the `TAG_PROMPT` requests.
+Like the metrics cache, this file carries **no `source_type`**.
 
 ---
 

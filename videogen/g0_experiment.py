@@ -25,25 +25,50 @@ import random
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
+from .clip_pool.models import resolve_local_path
+from .provenance import is_labs_eligible
+
 
 def load_pool(pool_dir: Path) -> List[Dict[str, Any]]:
-    """Load clips from pool manifest + tags."""
+    """Load clips from pool manifest + tags.
+
+    Provenance note (§3 invariant #1): ``source_type`` is carried through on
+    every clip so it can never be silently dropped at a type boundary. G0 is a
+    *falsification harness* and may legitimately use stock material as
+    stimulus — that is not a Labs-eligibility violation (the gate lives at the
+    p2p_exchange export, not at experiment read). But a non-Labs-eligible pool
+    is surfaced as a loud, auditable notice so the provenance of any derived
+    result is unambiguous. There is intentionally no Labs export path in this
+    module.
+    """
     pool_dir = Path(pool_dir)
     manifest = json.loads((pool_dir / "pool_manifest.json").read_text())
     tags = json.loads((pool_dir / "clip_tags.json").read_text())
 
     clips = []
+    labs_eligible_seen = False
     for shot in manifest.get("shots", []):
         for cand in shot.get("candidates", []):
             cid = cand["candidate_id"]
+            source_type = cand.get("source_type", "")
+            if is_labs_eligible(source_type):
+                labs_eligible_seen = True
             clip = {
                 "candidate_id": cid,
+                "source_type": source_type,
                 "shot_id": shot["shot_id"],
                 "orientation": cand["orientation"],
                 "local_path": cand["local_path"],
                 "tags": tags.get(cid, {}).get("tags", {}),
             }
             clips.append(clip)
+    if clips and not labs_eligible_seen:
+        # Auditable notice, not a block: G0 may use stock as stimulus, but the
+        # provenance of any result from this pool is "non-Labs" by construction.
+        print(
+            "  ⚠️  G0 pool contains no Labs-eligible (human_capture) clips — "
+            "results from this pool are stimulus-only, not Labs seed data."
+        )
     return clips
 
 
@@ -189,9 +214,7 @@ def generate_experiment_html(
     for shot in manifest.get("shots", []):
         for cand in shot.get("candidates", []):
             cid = cand["candidate_id"]
-            local = pool_dir.parent / cand["local_path"]
-            if not local.exists():
-                local = pool_dir / cand["local_path"].replace("pool/", "", 1)
+            local = resolve_local_path(pool_dir, cand["local_path"])
             rel = local.relative_to(pool_dir)
             clips_data[cid] = str(rel)
 

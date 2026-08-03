@@ -25,8 +25,9 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 from .metrics import measure_clip, flag_issues, compute_shot_stats
+from .models import MANIFEST_SCHEMA_VERSION, resolve_local_path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = MANIFEST_SCHEMA_VERSION
 
 
 def _now_iso() -> str:
@@ -52,10 +53,7 @@ def _load_or_measure_metrics(manifest: Dict[str, Any], pool_dir: Path,
             cid = cand["candidate_id"]
             if cid in cache and not force:
                 continue
-            local = pool_dir.parent / cand["local_path"]
-            if not local.exists():
-                # local_path is relative to tour_dir (pool's parent)
-                local = pool_dir / cand["local_path"].replace("pool/", "", 1)
+            local = resolve_local_path(pool_dir, cand["local_path"])
             if not local.exists():
                 print(f"  ⚠️  {cid}: file missing, skipping metrics")
                 continue
@@ -220,9 +218,7 @@ def run_judge(pool_dir: Path, editor_id: str = "founder",
     decided = 0
     for idx, (shot, cand, shot_stats) in enumerate(candidates, 1):
         cid = cand["candidate_id"]
-        local = pool_dir.parent / cand["local_path"]
-        if not local.exists():
-            local = pool_dir / cand["local_path"].replace("pool/", "", 1)
+        local = resolve_local_path(pool_dir, cand["local_path"])
         m = metrics_cache.get(cid, {})
         flags = flag_issues(m, shot_stats)
 

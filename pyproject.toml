@@ -32,7 +32,7 @@ ignore_missing_imports = true  # third-party stubs
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["videogen", "p2p_exchange", "tools"]
-addopts = "--cov=videogen --cov=p2p_exchange --cov-report=term-missing --cov-fail-under=25"
+addopts = "--cov=videogen --cov=p2p_exchange --cov-report=term-missing --cov-fail-under=30"
 
 [tool.coverage.run]
 source = ["videogen", "p2p_exchange"]

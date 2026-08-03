@@ -37,6 +37,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
+from .models import resolve_local_path
+
 
 def probe_resolution(clip_path: Path) -> Tuple[int, int]:
     """Get (width, height) of a video via ffprobe."""
@@ -255,9 +257,7 @@ def adapt_pool_clips(pool_dir: Path, manifest: Dict[str, Any],
             print(f"  ⚠️  {cid} is {cand['orientation']}, not landscape — skipping")
             continue
 
-        local = pool_dir.parent / cand["local_path"]
-        if not local.exists():
-            local = pool_dir / cand["local_path"].replace("pool/", "", 1)
+        local = resolve_local_path(pool_dir, cand["local_path"])
 
         out_dir = pool_dir / shot["shot_id"] / "portrait_adapted"
         out_dir.mkdir(parents=True, exist_ok=True)

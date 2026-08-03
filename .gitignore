@@ -90,3 +90,7 @@ explore_china_holiday/tours/**/output/
 # Peer identity private keys — NEVER commit
 **/private_key.pem
 **/identity/
+
+# Code-review harness artifacts (tools/code_review/ writes *_review.json
+# next to reviewed files — these are transient DeepSeek output, not source)
+*_review.json
