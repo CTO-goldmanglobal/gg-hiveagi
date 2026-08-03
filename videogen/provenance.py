@@ -28,6 +28,9 @@ See docs/LOOP-STRATEGY.md § "The hybrid seed" for the full reasoning.
 """
 
 from typing import Any, Dict, List, Tuple
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Source-type prefixes. A full source_type looks like "<prefix>:<detail>"
@@ -69,9 +72,9 @@ class ShareConsentViolation(Exception):
 
 def is_stock(source_type: str) -> bool:
     """True if the material originated from a stock library (professional content)."""
-    if not source_type:
+    if not source_type or not isinstance(source_type, str):
         return False
-    return source_type.split(":", 1)[0] == SOURCE_STOCK
+    return source_type.strip().split(":", 1)[0] == SOURCE_STOCK
 
 
 def is_ai_generated(source_type: str) -> bool:
@@ -80,16 +83,16 @@ def is_ai_generated(source_type: str) -> bool:
     Blocked from Labs — same gate as stock. AI imagining a scene is not
     human perspective. Fine for commercial use, never for the research network.
     """
-    if not source_type:
+    if not source_type or not isinstance(source_type, str):
         return False
-    return source_type.split(":", 1)[0] == SOURCE_AI
+    return source_type.strip().split(":", 1)[0] == SOURCE_AI
 
 
 def is_human_capture(source_type: str) -> bool:
     """True if the material was captured by a human's own device (glasses/phone)."""
-    if not source_type:
+    if not source_type or not isinstance(source_type, str):
         return False
-    return source_type.split(":", 1)[0] == SOURCE_HUMAN
+    return source_type.strip().split(":", 1)[0] == SOURCE_HUMAN
 
 
 # ============================================================
@@ -119,6 +122,7 @@ def can_share_to_labs(area: str, share_consent: bool = False) -> bool:
     Args:
         area: "open" or "commercial"
         share_consent: for commercial items, did the owner explicitly consent?
+                       Must be strictly True (bool), not just truthy.
 
     Returns:
         True if the item can be shared to the Labs network.
@@ -126,7 +130,7 @@ def can_share_to_labs(area: str, share_consent: bool = False) -> bool:
     if area == AREA_OPEN:
         return True
     if area == AREA_COMMERCIAL:
-        return share_consent  # must be explicitly asked + answered
+        return share_consent is True  # strict bool check, not truthy
     # Unknown area → fail closed
     return False
 
@@ -144,7 +148,7 @@ def assert_share_consent(area: str, share_consent: bool, item_id: str = "") -> N
             f"Unknown area '{area}' for item{f' ({item_id})' if item_id else ''}. "
             f"Must be '{AREA_OPEN}' or '{AREA_COMMERCIAL}'. Fail closed."
         )
-    if area == AREA_COMMERCIAL and not share_consent:
+    if area == AREA_COMMERCIAL and share_consent is not True:
         raise ShareConsentViolation(
             f"Cannot publish commercial item{f' ({item_id})' if item_id else ''} "
             f"to open network without explicit consent. "
@@ -219,8 +223,10 @@ def filter_for_labs(
     if rejected:
         # Visible in logs — silent provenance drift is the failure mode this
         # module exists to prevent.
-        print(f"  [provenance] blocked {len(rejected)} stock/unprovenanced "
-              f"entries from Labs (of {len(entries)} total)")
+        logger.warning(
+            "blocked %d stock/ai/unprovenanced entries from Labs (of %d total)",
+            len(rejected), len(entries)
+        )
     return eligible, rejected
 
 

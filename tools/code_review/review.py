@@ -110,7 +110,7 @@ CONTEXT: {context or "Part of Project HiveAGI — a distributed human-perspectiv
 
 CODE:
 ```python
-{code[:6000]}
+{code[:15000]}
 ```
 
 Review for:

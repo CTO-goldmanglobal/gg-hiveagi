@@ -142,9 +142,33 @@ class TestAreaGate:
     def test_commercial_with_consent_allowed(self):
         assert can_share_to_labs("commercial", share_consent=True) is True
 
+    def test_commercial_truthy_not_bool_blocked(self):
+        """share_consent must be strictly True, not just truthy."""
+        assert can_share_to_labs("commercial", share_consent="yes") is False
+        assert can_share_to_labs("commercial", share_consent=1) is False
+        assert can_share_to_labs("commercial", share_consent=[1]) is False
+
     def test_unknown_area_fail_closed(self):
         assert can_share_to_labs("unknown") is False
         assert can_share_to_labs("") is False
+
+
+class TestSourceTypeWhitespace:
+    def test_stock_with_whitespace(self):
+        assert is_stock("  stock:pexels  ") is True
+
+    def test_ai_with_whitespace(self):
+        assert is_ai_generated("  ai_generated:h3  ") is True
+
+    def test_human_with_whitespace(self):
+        assert is_human_capture("  human_capture:glasses  ") is True
+
+    def test_non_string_fails_closed(self):
+        assert is_stock(None) is False
+        assert is_stock(123) is False
+        assert is_stock([]) is False
+        assert is_ai_generated(None) is False
+        assert is_human_capture(None) is False
 
 
 class TestAssertShareConsent:
