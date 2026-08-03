@@ -34,6 +34,11 @@ jobs:
             sudo apt-get update -qq && sudo apt-get install -y -qq libgles2 libegl1
           fi
           pip install -r tools/pii_anonymizer/requirements.txt
+          # Dev/test deps — pytest-cov is required because pyproject.toml's
+          # addopts inject --cov flags into every pytest invocation. Without
+          # this, CI's pytest crashes with "unrecognized arguments: --cov=...".
+          # opencv-python (above) already provides cv2 + numpy for test_metrics.py.
+          pip install -r requirements-dev.txt
 
       - name: P0 — Seed Generator
         run: python tools/seed_generator/generate_seed.py
@@ -161,10 +166,9 @@ jobs:
           # A refactor that silently breaks blurring must fail CI here.
           python tools/pii_anonymizer/test_safety_gate.py
 
-      - name: Unit tests (provenance + P2P trust layer)
-        run: |
-          python -m pytest videogen/test_provenance.py \
-                          p2p_exchange/test_trust.py \
-                          p2p_exchange/test_appreciation.py \
-                          p2p_exchange/test_boards.py \
-                          -v
+      - name: Unit tests (full suite + coverage gate)
+        # Run the whole suite discovered via testpaths in pyproject.toml.
+        # The --cov-fail-under gate (currently 30%) is enforced here, so CI
+        # is the real quality gate, not just local pre-commit. opencv/numpy
+        # (from pii_anonymizer deps) let test_metrics.py run headlessly.
+        run: python -m pytest -v
