@@ -3,7 +3,7 @@
 # Real IPFS: install kubo daemon separately (https://docs.ipfs.tech/install/)
 #
 # Trust layer (signed manifests — identity.py, appreciation.py):
-cryptography>=42.0
+cryptography>=49.0.0
 
 # Testing:
 pytest>=8.0
