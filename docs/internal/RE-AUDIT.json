@@ -1,0 +1,75 @@
+{
+  "ratings": {
+    "architecture": {
+      "score": 8,
+      "previous": 7,
+      "change": "+1",
+      "justification": "The hybrid edge architecture with 5-layer brain and two-area ownership model (Labs/Forge) adds clear separation and scalability thinking, but remains early-stage."
+    },
+    "code_quality": {
+      "score": 6,
+      "previous": 5,
+      "change": "+1",
+      "justification": "Code review harness and fail-closed logic improved provenance.py from 4/10 to 8/10; 98 tests show rigor, but codebase is still small."
+    },
+    "research_methodology": {
+      "score": 5,
+      "previous": 4,
+      "change": "+1",
+      "justification": "Thesis verification with DeepSeek and MiniMax M3, plus iterative LLM-based code review loops, add structure but lack empirical rigor."
+    },
+    "documentation": {
+      "score": 9,
+      "previous": 8,
+      "change": "+1",
+      "justification": "Extensive bilingual docs, hardware spec, roadmap, and vision documents — documentation is now a standout strength."
+    },
+    "business_model": {
+      "score": 6,
+      "previous": 5,
+      "change": "+1",
+      "justification": "Two-area ownership (AGPL Labs vs commercial Forge) with consent gates is a clearer monetization path, but revenue and user adoption are unproven."
+    },
+    "privacy_ethics": {
+      "score": 9,
+      "previous": 8,
+      "change": "+1",
+      "justification": "Fail-closed provenance, explicit share consent, and logged PII blur reasons show a mature approach to privacy and user control."
+    },
+    "scalability": {
+      "score": 7,
+      "previous": 6,
+      "change": "+1",
+      "justification": "P2P trust layer with signed manifests and reputation, plus edge architecture, suggests scalable patterns, but no large-scale deployment yet."
+    },
+    "thesis": {
+      "score": 7,
+      "previous": 6,
+      "change": "+1",
+      "justification": "The 'Living Seed' vision is coherent and now verified via multiple LLMs, though still theoretical in part."
+    },
+    "founder_fit": {
+      "score": 7,
+      "previous": 6,
+      "change": "+1",
+      "justification": "Founder responds to audits, iterates rapidly, and documents consistently — strong builder and learner traits."
+    },
+    "overall_maturity": {
+      "score": 7,
+      "previous": 5,
+      "change": "+2",
+      "justification": "Significant strides in architecture, trust, and documentation; still pre-product-market-fit but clearly maturing."
+    }
+  },
+  "biggest_improvement": "The provenance gate with a code review loop (4/10 → 8/10) and the addition of a 4-layer P2P trust system are the most impactful changes.",
+  "still_missing": [
+    "Production deployment and real user adoption",
+    "Revenue generation from Forge model",
+    "Public API/SDK and developer ecosystem",
+    "Proof that the trust layer works at scale"
+  ],
+  "would_fund_now": false,
+  "funding_reason": "The project is still pre-commercial with no traction; need to validate the Forge model with a real pilot and show path to revenue.",
+  "next_priority": "Launch a pilot in the Forge area with a specific use case to test consent, provenance, and willingness to pay.",
+  "final_verdict": "A rapidly improving project with strong documentation and trust architecture, but needs to prove it can attract users and generate revenue."
+}
