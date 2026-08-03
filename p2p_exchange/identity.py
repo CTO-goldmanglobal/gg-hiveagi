@@ -22,13 +22,15 @@ import hashlib
 import json
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Any
 
 try:
-    from cryptography.hazmat.primitives.asymmetric.ed25519 import (
-        Ed25519PrivateKey, Ed25519PublicKey
-    )
     from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+        Ed25519PrivateKey,
+        Ed25519PublicKey,
+    )
+
     CRYPTO_AVAILABLE = True
 except ImportError:
     CRYPTO_AVAILABLE = False
@@ -38,7 +40,8 @@ except ImportError:
 # Peer identity — Ed25519 keypair generation + storage
 # ============================================================
 
-def generate_keypair() -> Tuple[bytes, bytes]:
+
+def generate_keypair() -> tuple[bytes, bytes]:
     """
     Generate a new Ed25519 keypair.
 
@@ -46,9 +49,7 @@ def generate_keypair() -> Tuple[bytes, bytes]:
         (private_key_pem, public_key_pem) — both as bytes.
     """
     if not CRYPTO_AVAILABLE:
-        raise ImportError(
-            "cryptography package required: pip install cryptography"
-        )
+        raise ImportError("cryptography package required: pip install cryptography")
     private_key = Ed25519PrivateKey.generate()
     public_key = private_key.public_key()
 
@@ -87,7 +88,7 @@ def save_keypair(private_key_pem: bytes, public_key_pem: bytes, path: Path) -> N
     (path / "peer_id.txt").write_text(peer_id, encoding="utf-8")
 
 
-def load_keypair(path: Path) -> Tuple[bytes, bytes]:
+def load_keypair(path: Path) -> tuple[bytes, bytes]:
     """Load keypair from disk."""
     path = Path(path)
     priv = (path / "private_key.pem").read_bytes()
@@ -120,11 +121,12 @@ def init_identity(identity_dir: Path) -> str:
 # Signed manifests — bind Seed Package to publisher
 # ============================================================
 
+
 def sign_manifest(
-    manifest: Dict[str, Any],
+    manifest: dict[str, Any],
     private_key_pem: bytes,
     embed_key: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Sign a Seed Package manifest with the publisher's private key.
 
@@ -173,9 +175,9 @@ def sign_manifest(
 
 
 def verify_manifest(
-    manifest: Dict[str, Any],
-    public_key_pem: Optional[bytes] = None,
-) -> Tuple[bool, str]:
+    manifest: dict[str, Any],
+    public_key_pem: bytes | None = None,
+) -> tuple[bool, str]:
     """
     Verify a signed manifest.
 
@@ -223,7 +225,7 @@ def verify_manifest(
         return False, f"signature verification failed: {e}"
 
 
-def embed_public_key(manifest: Dict[str, Any], public_key_pem: bytes) -> Dict[str, Any]:
+def embed_public_key(manifest: dict[str, Any], public_key_pem: bytes) -> dict[str, Any]:
     """
     Embed the publisher's public key in the manifest (base64).
     This allows verification without a separate key lookup — at the cost

@@ -27,8 +27,8 @@ The rule:
 See docs/LOOP-STRATEGY.md § "The hybrid seed" for the full reasoning.
 """
 
-from typing import Any, Dict, List, Tuple
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -62,11 +62,13 @@ AREA_COMMERCIAL = "commercial"
 
 class ProvenanceViolation(Exception):
     """Raised when stock/unprovenanced material would reach Labs Seed publish."""
+
     pass
 
 
 class ShareConsentViolation(Exception):
     """Raised when a commercial item would be published without owner consent."""
+
     pass
 
 
@@ -181,7 +183,7 @@ def is_labs_eligible(source_type: str) -> bool:
     return False
 
 
-def is_judgment_labs_eligible(judgment_row: Dict[str, Any]) -> bool:
+def is_judgment_labs_eligible(judgment_row: dict[str, Any]) -> bool:
     """
     Gate for human-JUDGMENT rows (accept/reject + reason on a candidate).
 
@@ -203,10 +205,10 @@ def is_judgment_labs_eligible(judgment_row: Dict[str, Any]) -> bool:
 
 
 def filter_for_labs(
-    entries: List[Dict[str, Any]],
+    entries: list[dict[str, Any]],
     source_type_field: str = "source_type",
     entry_type: str = "raw",
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """
     Split a list of entries into (labs_eligible, rejected).
 
@@ -227,8 +229,8 @@ def filter_for_labs(
 
     Non-dict entries are rejected (fail closed).
     """
-    eligible: List[Dict[str, Any]] = []
-    rejected: List[Dict[str, Any]] = []
+    eligible: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
     for e in entries:
         # Non-dict entries → reject (fail closed)
         if not isinstance(e, dict):
@@ -253,13 +255,15 @@ def filter_for_labs(
     if rejected:
         logger.warning(
             "blocked %d stock/ai/unprovenanced entries from Labs (of %d total, type=%s)",
-            len(rejected), len(entries), entry_type
+            len(rejected),
+            len(entries),
+            entry_type,
         )
     return eligible, rejected
 
 
 def assert_labs_safe(
-    entries: List[Dict[str, Any]],
+    entries: list[dict[str, Any]],
     entry_type: str = "raw",
 ) -> None:
     """

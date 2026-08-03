@@ -28,17 +28,15 @@ Layer 3 is the evidence (what have you done).
 Layer 4 is the trajectory (are you growing?).
 """
 
-
 import json
 import time
-from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
-
+from typing import Any
 
 # ============================================================
 # CONTRIBUTION BOARD — per-contributor stats
 # ============================================================
+
 
 class ContributionBoard:
     """
@@ -53,7 +51,7 @@ class ContributionBoard:
 
     def __init__(self, board_path: Path):
         self.path = Path(board_path)
-        self._contributors: Dict[str, Dict[str, Any]] = {}
+        self._contributors: dict[str, dict[str, Any]] = {}
         self._load()
 
     def _load(self) -> None:
@@ -105,12 +103,14 @@ class ContributionBoard:
 
         # Keep timeline to last 100 events
         timeline = c.get("timeline", [])
-        timeline.append({
-            "type": event_type,
-            "domain": domain,
-            "at": c["last_active"],
-            "detail": detail[:80],
-        })
+        timeline.append(
+            {
+                "type": event_type,
+                "domain": domain,
+                "at": c["last_active"],
+                "detail": detail[:80],
+            }
+        )
         c["timeline"] = timeline[-100:]
 
         self._save()
@@ -127,7 +127,7 @@ class ContributionBoard:
     def record_seed_shared(self, peer_id: str) -> None:
         self.record_event(peer_id, "seed_shared")
 
-    def get_profile(self, peer_id: str) -> Dict[str, Any]:
+    def get_profile(self, peer_id: str) -> dict[str, Any]:
         """Get a contribution profile for a peer (like a GitHub profile)."""
         c = self._contributors.get(peer_id)
         if c is None:
@@ -165,7 +165,9 @@ class ContributionBoard:
             return f"  {peer_id}\n    No contributions yet."
 
         lines = [f"  {peer_id}"]
-        lines.append(f"    Active: {p['first_seen'][:10]} → {p['last_active'][:10] if p['last_active'] else '?'}")
+        lines.append(
+            f"    Active: {p['first_seen'][:10]} → {p['last_active'][:10] if p['last_active'] else '?'}"
+        )
         lines.append(f"    Total events: {p['total_events']}")
         lines.append(f"    Tags published:  {p['tags_published']}")
         lines.append(f"    Judgments made:  {p['judgments_made']}")
@@ -180,7 +182,7 @@ class ContributionBoard:
 
         return "\n".join(lines)
 
-    def leaderboard(self, metric: str = "total_events", limit: int = 10) -> List[Dict[str, Any]]:
+    def leaderboard(self, metric: str = "total_events", limit: int = 10) -> list[dict[str, Any]]:
         """Get top contributors by a metric."""
         profiles = [self.get_profile(pid) for pid in self._contributors]
         profiles.sort(key=lambda x: -x.get(metric, 0))
@@ -195,10 +197,12 @@ class ContributionBoard:
         lines = [f"  🏆 Leaderboard ({metric})"]
         for i, p in enumerate(entries, 1):
             val = p.get(metric, 0)
-            lines.append(f"    {i}. {p['peer_id']:<22} {val:>6}  ({p['tags_published']} tags, {p['judgments_made']} judgments)")
+            lines.append(
+                f"    {i}. {p['peer_id']:<22} {val:>6}  ({p['tags_published']} tags, {p['judgments_made']} judgments)"
+            )
         return "\n".join(lines)
 
-    def all_profiles(self) -> List[Dict[str, Any]]:
+    def all_profiles(self) -> list[dict[str, Any]]:
         """Get profiles for all contributors."""
         return [self.get_profile(pid) for pid in self._contributors]
 
@@ -206,6 +210,7 @@ class ContributionBoard:
 # ============================================================
 # IMPROVEMENT BOARD — growth + comparison over time
 # ============================================================
+
 
 class ImprovementBoard:
     """
@@ -222,7 +227,7 @@ class ImprovementBoard:
 
     def __init__(self, board_path: Path):
         self.path = Path(board_path)
-        self._snapshots: List[Dict[str, Any]] = []
+        self._snapshots: list[dict[str, Any]] = []
         self._load()
 
     def _load(self) -> None:
@@ -239,7 +244,9 @@ class ImprovementBoard:
             encoding="utf-8",
         )
 
-    def take_snapshot(self, contribution_board: ContributionBoard, label: str = "") -> Dict[str, Any]:
+    def take_snapshot(
+        self, contribution_board: ContributionBoard, label: str = ""
+    ) -> dict[str, Any]:
         """
         Take a snapshot of all contributor stats at this moment.
         Call this periodically (daily, weekly, per-circle).
@@ -271,7 +278,7 @@ class ImprovementBoard:
         peer_id: str,
         metric: str = "total_events",
         periods: int = 2,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get growth data for a contributor over the last N snapshots.
 
@@ -279,8 +286,15 @@ class ImprovementBoard:
                  trend (up/down/stable).
         """
         if len(self._snapshots) < 2:
-            return {"peer_id": peer_id, "metric": metric, "current": 0, "previous": 0,
-                    "delta": 0, "pct_change": 0, "trend": "no_data"}
+            return {
+                "peer_id": peer_id,
+                "metric": metric,
+                "current": 0,
+                "previous": 0,
+                "delta": 0,
+                "pct_change": 0,
+                "trend": "no_data",
+            }
 
         latest = self._snapshots[-1]
         prev_idx = max(0, len(self._snapshots) - periods)
@@ -317,7 +331,7 @@ class ImprovementBoard:
     def get_ranking_changes(
         self,
         metric: str = "total_events",
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Compare rankings between the two most recent snapshots.
 
@@ -347,27 +361,31 @@ class ImprovementBoard:
             if curr and prev:
                 change = prev - curr  # positive = moved up
                 if change != 0:
-                    changes.append({
+                    changes.append(
+                        {
+                            "peer_id": pid,
+                            "current_rank": curr,
+                            "previous_rank": prev,
+                            "change": change,
+                            "direction": "↑" if change > 0 else "↓",
+                        }
+                    )
+            elif curr and not prev:
+                changes.append(
+                    {
                         "peer_id": pid,
                         "current_rank": curr,
-                        "previous_rank": prev,
-                        "change": change,
-                        "direction": "↑" if change > 0 else "↓",
-                    })
-            elif curr and not prev:
-                changes.append({
-                    "peer_id": pid,
-                    "current_rank": curr,
-                    "previous_rank": None,
-                    "change": "NEW",
-                    "direction": "★",
-                })
+                        "previous_rank": None,
+                        "change": "NEW",
+                        "direction": "★",
+                    }
+                )
 
         # Sort by biggest movers first
         changes.sort(key=lambda x: -(x["change"] if isinstance(x["change"], int) else 0))
         return changes
 
-    def network_growth(self) -> Dict[str, Any]:
+    def network_growth(self) -> dict[str, Any]:
         """
         Get overall network growth between last two snapshots.
 
@@ -416,9 +434,15 @@ class ImprovementBoard:
             prev = growth["previous"]
             deltas = growth["deltas"]
             lines.append("")
-            lines.append(f"    Network: {curr['contributors']} contributors ({'+' if deltas['contributors'] >= 0 else ''}{deltas['contributors']})")
-            lines.append(f"    Tags:    {curr['total_tags']} ({'+' if deltas['total_tags'] >= 0 else ''}{deltas['total_tags']})")
-            lines.append(f"    Events:  {curr['total_events']} ({'+' if deltas['total_events'] >= 0 else ''}{deltas['total_events']})")
+            lines.append(
+                f"    Network: {curr['contributors']} contributors ({'+' if deltas['contributors'] >= 0 else ''}{deltas['contributors']})"
+            )
+            lines.append(
+                f"    Tags:    {curr['total_tags']} ({'+' if deltas['total_tags'] >= 0 else ''}{deltas['total_tags']})"
+            )
+            lines.append(
+                f"    Events:  {curr['total_events']} ({'+' if deltas['total_events'] >= 0 else ''}{deltas['total_events']})"
+            )
 
         # Ranking changes
         changes = self.get_ranking_changes(metric)
@@ -427,8 +451,12 @@ class ImprovementBoard:
             lines.append("    Ranking changes:")
             for c in changes[:10]:
                 if c["direction"] == "★":
-                    lines.append(f"      {c['direction']} {c['peer_id']:<22} NEW (#{c['current_rank']})")
+                    lines.append(
+                        f"      {c['direction']} {c['peer_id']:<22} NEW (#{c['current_rank']})"
+                    )
                 else:
-                    lines.append(f"      {c['direction']} {c['peer_id']:<22} #{c['previous_rank']} → #{c['current_rank']} ({'+' if c['change'] > 0 else ''}{c['change']})")
+                    lines.append(
+                        f"      {c['direction']} {c['peer_id']:<22} #{c['previous_rank']} → #{c['current_rank']} ({'+' if c['change'] > 0 else ''}{c['change']})"
+                    )
 
         return "\n".join(lines)

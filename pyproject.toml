@@ -1,0 +1,43 @@
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # bugbear
+    "UP",   # pyupgrade
+    "SIM",  # simplify
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # function calls in defaults (common pattern)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # start lenient, tighten over time
+ignore_missing_imports = true  # third-party stubs
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["videogen", "p2p_exchange", "tools"]
+addopts = "--cov=videogen --cov=p2p_exchange --cov-report=term-missing --cov-fail-under=25"
+
+[tool.coverage.run]
+source = ["videogen", "p2p_exchange"]
+omit = ["*/test_*.py", "*/__pycache__/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

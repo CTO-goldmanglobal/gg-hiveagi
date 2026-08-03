@@ -23,16 +23,15 @@ final arbiter, not the machine.
 import json
 import time
 from pathlib import Path
-from typing import Dict, Any, List
-
+from typing import Any
 
 # Spam detection thresholds (machine-operated, human-overridable)
-SPAM_THRESHOLD = -3.0         # at or below → spam folder
-FLAG_THRESHOLD = 0.0          # below 0 but above spam → flagged (check)
-INVALID_SIG_PENALTY = -2.0    # each invalid signature
-BAD_TAG_PENALTY = -0.5        # each rejected tag
-SPAM_REPORT_PENALTY = -3.0    # explicit spam report (immediate spam)
-GOOD_TAG_BONUS = 0.05         # each accepted tag (keeps healthy peers healthy)
+SPAM_THRESHOLD = -3.0  # at or below → spam folder
+FLAG_THRESHOLD = 0.0  # below 0 but above spam → flagged (check)
+INVALID_SIG_PENALTY = -2.0  # each invalid signature
+BAD_TAG_PENALTY = -0.5  # each rejected tag
+SPAM_REPORT_PENALTY = -3.0  # explicit spam report (immediate spam)
+GOOD_TAG_BONUS = 0.05  # each accepted tag (keeps healthy peers healthy)
 
 
 class SpamFilter:
@@ -45,7 +44,7 @@ class SpamFilter:
 
     def __init__(self, store_path: Path):
         self.path = Path(store_path)
-        self._scores: Dict[str, Dict[str, Any]] = {}
+        self._scores: dict[str, dict[str, Any]] = {}
         self._load()
 
     def _load(self) -> None:
@@ -162,24 +161,26 @@ class SpamFilter:
     def _log_event(self, peer_id: str, event: str, delta: float, detail: str = "") -> None:
         entry = self._scores[peer_id]
         events = entry.get("events", [])
-        events.append({
-            "event": event,
-            "delta": delta,
-            "detail": detail[:80],
-            "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        })
+        events.append(
+            {
+                "event": event,
+                "delta": delta,
+                "detail": detail[:80],
+                "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+        )
         entry["events"] = events[-20:]  # keep last 20
         entry["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
-    def get_spam_list(self) -> List[str]:
+    def get_spam_list(self) -> list[str]:
         """Get all peer IDs currently in spam folder."""
         return [pid for pid, entry in self._scores.items() if self.is_spam(pid)]
 
-    def get_flagged_list(self) -> List[str]:
+    def get_flagged_list(self) -> list[str]:
         """Get all peer IDs flagged for human attention."""
         return [pid for pid in self._scores if self.is_flagged(pid)]
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Spam folder summary."""
         return {
             "total_peers_tracked": len(self._scores),

@@ -34,9 +34,9 @@ Schema (one appreciation entry):
 import json
 import time
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any
 
-from .identity import sign_manifest, verify_manifest, peer_id_from_public_key
+from .identity import sign_manifest, verify_manifest
 
 
 def create_appreciation(
@@ -47,7 +47,7 @@ def create_appreciation(
     headline: str = "",
     body: str = "",
     interactions: int = 0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Create an appreciation entry (before signing).
 
@@ -74,16 +74,16 @@ def create_appreciation(
         "rating": rating,
         "domain": domain,
         "headline": headline[:120],  # keep headlines short
-        "body": body[:2000],         # reasonable limit for feedback
+        "body": body[:2000],  # reasonable limit for feedback
         "interactions": interactions,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
 
 
 def sign_appreciation(
-    appreciation: Dict[str, Any],
+    appreciation: dict[str, Any],
     private_key_pem: bytes,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Sign an appreciation entry with the reviewer's private key.
 
@@ -95,7 +95,7 @@ def sign_appreciation(
 
 
 def verify_appreciation(
-    appreciation: Dict[str, Any],
+    appreciation: dict[str, Any],
     reviewer_public_key_pem: bytes,
 ) -> tuple:
     """
@@ -111,6 +111,7 @@ def verify_appreciation(
 # Appreciation Board — aggregate + display
 # ============================================================
 
+
 class AppreciationBoard:
     """
     A local collection of appreciation entries.
@@ -121,7 +122,7 @@ class AppreciationBoard:
 
     def __init__(self, board_path: Path):
         self.path = Path(board_path)
-        self._entries: List[Dict[str, Any]] = []
+        self._entries: list[dict[str, Any]] = []
         self._load()
 
     def _load(self) -> None:
@@ -140,7 +141,7 @@ class AppreciationBoard:
             encoding="utf-8",
         )
 
-    def add(self, appreciation: Dict[str, Any]) -> None:
+    def add(self, appreciation: dict[str, Any]) -> None:
         """Add an appreciation entry to the board."""
         # Check if updating an existing review from same reviewer → same peer
         reviewer = appreciation.get("reviewer_peer_id")
@@ -149,30 +150,33 @@ class AppreciationBoard:
 
         # Replace existing appreciation from same reviewer for same peer+domain
         self._entries = [
-            e for e in self._entries
-            if not (e.get("reviewer_peer_id") == reviewer
-                    and e.get("reviewed_peer_id") == reviewed
-                    and e.get("domain", "") == domain)
+            e
+            for e in self._entries
+            if not (
+                e.get("reviewer_peer_id") == reviewer
+                and e.get("reviewed_peer_id") == reviewed
+                and e.get("domain", "") == domain
+            )
         ]
         self._entries.append(appreciation)
         self._save()
 
-    def for_peer(self, peer_id: str) -> List[Dict[str, Any]]:
+    def for_peer(self, peer_id: str) -> list[dict[str, Any]]:
         """Get all appreciations about a specific peer."""
         return [e for e in self._entries if e.get("reviewed_peer_id") == peer_id]
 
-    def by_reviewer(self, reviewer_id: str) -> List[Dict[str, Any]]:
+    def by_reviewer(self, reviewer_id: str) -> list[dict[str, Any]]:
         """Get all appreciations written by a specific reviewer."""
         return [e for e in self._entries if e.get("reviewer_peer_id") == reviewer_id]
 
-    def average_rating(self, peer_id: str) -> Optional[float]:
+    def average_rating(self, peer_id: str) -> float | None:
         """Get average star rating for a peer (None if no appreciations)."""
         entries = self.for_peer(peer_id)
         if not entries:
             return None
         return sum(e["rating"] for e in entries) / len(entries)
 
-    def summary(self, peer_id: str) -> Dict[str, Any]:
+    def summary(self, peer_id: str) -> dict[str, Any]:
         """Get a summary card for a peer (like a Google Places summary)."""
         entries = self.for_peer(peer_id)
         if not entries:
@@ -216,15 +220,17 @@ class AppreciationBoard:
             f"    {stars} {avg:.1f} ({s['total_reviews']} review{'s' if s['total_reviews'] != 1 else ''})",
         ]
         if s.get("latest_headline"):
-            lines.append(f"    \"{s['latest_headline']}\"")
+            lines.append(f'    "{s["latest_headline"]}"')
         if s.get("top_domains"):
             domains_str = ", ".join(f"{d} ({n})" for d, n in s["top_domains"])
             lines.append(f"    Domains: {domains_str}")
         star_dist = s["stars"]
-        lines.append(f"    5★:{star_dist['5']} 4★:{star_dist['4']} 3★:{star_dist['3']} 2★:{star_dist['2']} 1★:{star_dist['1']}")
+        lines.append(
+            f"    5★:{star_dist['5']} 4★:{star_dist['4']} 3★:{star_dist['3']} 2★:{star_dist['2']} 1★:{star_dist['1']}"
+        )
         return "\n".join(lines)
 
-    def all_summaries(self) -> List[Dict[str, Any]]:
+    def all_summaries(self) -> list[dict[str, Any]]:
         """Get summary cards for all reviewed peers."""
         peer_ids = set(e.get("reviewed_peer_id") for e in self._entries)
         return [self.summary(pid) for pid in peer_ids if pid]
