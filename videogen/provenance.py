@@ -46,6 +46,16 @@ AREA_OPEN = "open"
 AREA_COMMERCIAL = "commercial"
 
 
+class ProvenanceViolation(Exception):
+    """Raised when stock/unprovenanced material would reach Labs Seed publish."""
+    pass
+
+
+class ShareConsentViolation(Exception):
+    """Raised when a commercial item would be published without owner consent."""
+    pass
+
+
 def is_stock(source_type: str) -> bool:
     """True if the material originated from a stock library (professional content)."""
     if not source_type:
@@ -105,19 +115,19 @@ def assert_share_consent(area: str, share_consent: bool, item_id: str = "") -> N
 
     Raises ShareConsentViolation if a commercial item is being published
     without explicit consent. This is the "always ask the human" rule,
-    enforced in code.
+    enforced in code. Unknown areas also fail closed.
     """
+    if area not in (AREA_OPEN, AREA_COMMERCIAL):
+        raise ShareConsentViolation(
+            f"Unknown area '{area}' for item{f' ({item_id})' if item_id else ''}. "
+            f"Must be '{AREA_OPEN}' or '{AREA_COMMERCIAL}'. Fail closed."
+        )
     if area == AREA_COMMERCIAL and not share_consent:
         raise ShareConsentViolation(
             f"Cannot publish commercial item{f' ({item_id})' if item_id else ''} "
             f"to open network without explicit consent. "
             f"The owner must be asked. See provenance.py § area gate."
         )
-
-
-class ShareConsentViolation(Exception):
-    """Raised when a commercial item would be published without owner consent."""
-    pass
 
 
 def is_labs_eligible(source_type: str) -> bool:
@@ -209,8 +219,3 @@ def assert_labs_safe(entries: List[Dict[str, Any]]) -> None:
             f"Stock/unprovenanced material cannot enter the Labs network. "
             f"See docs/LOOP-STRATEGY.md § The hybrid seed."
         )
-
-
-class ProvenanceViolation(Exception):
-    """Raised when stock/unprovenanced material would reach Labs Seed publish."""
-    pass
