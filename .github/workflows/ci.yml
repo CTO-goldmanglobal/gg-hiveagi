@@ -25,6 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r tools/seed_generator/requirements.txt
           pip install -r llm_wiki_engine/requirements.txt
+          pip install -r p2p_exchange/requirements.txt
           # PII anonymizer deps — needed for the safety gate test below.
           # Heavy native deps (opencv-python, mediapipe), but the safety gate
           # is the one thing CONTRIBUTING.md promises hardest, so it must have CI coverage.
@@ -159,3 +160,11 @@ jobs:
           # then asserts SafetyError raises when mediapipe is hidden.
           # A refactor that silently breaks blurring must fail CI here.
           python tools/pii_anonymizer/test_safety_gate.py
+
+      - name: Unit tests (provenance + P2P trust layer)
+        run: |
+          python -m pytest videogen/test_provenance.py \
+                          p2p_exchange/test_trust.py \
+                          p2p_exchange/test_appreciation.py \
+                          p2p_exchange/test_boards.py \
+                          -v

@@ -86,3 +86,7 @@ explore_china_holiday/tours/**/pool/
 
 # Tour video build artifacts (intermediate + final, regenerable)
 explore_china_holiday/tours/**/output/
+
+# Peer identity private keys — NEVER commit
+**/private_key.pem
+**/identity/

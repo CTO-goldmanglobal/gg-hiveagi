@@ -1,10 +1,9 @@
-# P2 P2P Exchange — stdlib only (no third-party deps)
-# All required modules are in the Python standard library:
-#   urllib.request, json, hashlib, base64, pathlib, dataclasses
+# P2P Exchange dependencies
+# Core exchange: stdlib only (urllib, json, hashlib, base64, pathlib)
+# Real IPFS: install kubo daemon separately (https://docs.ipfs.tech/install/)
 #
-# This keeps P2 dependency-free like P0, matching the project's
-# "minimal, auditable" ethos.
-#
-# To use real IPFS (Kubo mode), install the kubo daemon separately:
-#   https://docs.ipfs.tech/install/
-# No Python package needed — we talk to kubo over HTTP.
+# Trust layer (signed manifests — identity.py, appreciation.py):
+cryptography>=42.0
+
+# Testing:
+pytest>=8.0
