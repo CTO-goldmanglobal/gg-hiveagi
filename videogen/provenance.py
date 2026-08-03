@@ -70,11 +70,20 @@ class ShareConsentViolation(Exception):
     pass
 
 
+def _source_prefix(source_type: str) -> str:
+    """Extract the prefix from a source_type string, with type safety.
+
+    Handles None, non-string, and whitespace gracefully.
+    Returns empty string for invalid input (fail closed).
+    """
+    if not source_type or not isinstance(source_type, str):
+        return ""
+    return source_type.strip().split(":", 1)[0]
+
+
 def is_stock(source_type: str) -> bool:
     """True if the material originated from a stock library (professional content)."""
-    if not source_type or not isinstance(source_type, str):
-        return False
-    return source_type.strip().split(":", 1)[0] == SOURCE_STOCK
+    return _source_prefix(source_type) == SOURCE_STOCK
 
 
 def is_ai_generated(source_type: str) -> bool:
@@ -83,16 +92,12 @@ def is_ai_generated(source_type: str) -> bool:
     Blocked from Labs — same gate as stock. AI imagining a scene is not
     human perspective. Fine for commercial use, never for the research network.
     """
-    if not source_type or not isinstance(source_type, str):
-        return False
-    return source_type.strip().split(":", 1)[0] == SOURCE_AI
+    return _source_prefix(source_type) == SOURCE_AI
 
 
 def is_human_capture(source_type: str) -> bool:
     """True if the material was captured by a human's own device (glasses/phone)."""
-    if not source_type or not isinstance(source_type, str):
-        return False
-    return source_type.strip().split(":", 1)[0] == SOURCE_HUMAN
+    return _source_prefix(source_type) == SOURCE_HUMAN
 
 
 # ============================================================
@@ -184,8 +189,13 @@ def is_judgment_labs_eligible(judgment_row: Dict[str, Any]) -> bool:
     perspective. But the row MUST carry a `source_type` so Labs knows what it
     was judged against. A judgment row without provenance is rejected (fail
     closed), same discipline as raw material.
+
+    A source_type that is only whitespace is treated as missing (fail closed).
     """
-    if not judgment_row.get("source_type"):
+    if not isinstance(judgment_row, dict):
+        return False
+    st = judgment_row.get("source_type", "")
+    if not st or not isinstance(st, str) or not st.strip():
         return False
     # A judgment row is eligible as long as it is tagged. Labs consumers use
     # source_type to bucket "taste on stock" vs "taste on human capture."
@@ -195,6 +205,7 @@ def is_judgment_labs_eligible(judgment_row: Dict[str, Any]) -> bool:
 def filter_for_labs(
     entries: List[Dict[str, Any]],
     source_type_field: str = "source_type",
+    entry_type: str = "raw",
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Split a list of entries into (labs_eligible, rejected).
@@ -204,46 +215,76 @@ def filter_for_labs(
     rejection count so silent provenance drift is visible.
 
     Args:
-        entries: list of dicts (raw-material rows OR judgment rows). For
-                 judgment rows, the presence of a source_type makes them
-                 eligible; for raw-material rows, only human_capture passes.
+        entries: list of dicts (raw-material rows OR judgment rows).
         source_type_field: which key holds the source_type (default "source_type").
+        entry_type: "raw" for raw material (only human_capture passes) or
+                    "judgment" for human judgment rows (any tagged row passes,
+                    because human taste IS human perspective regardless of
+                    what it was judged against).
 
     Returns:
         (eligible, rejected) — two lists. Same ordering as input.
+
+    Non-dict entries are rejected (fail closed).
     """
     eligible: List[Dict[str, Any]] = []
     rejected: List[Dict[str, Any]] = []
     for e in entries:
-        st = e.get(source_type_field, "")
-        if is_labs_eligible(st):
-            eligible.append(e)
-        else:
+        # Non-dict entries → reject (fail closed)
+        if not isinstance(e, dict):
             rejected.append(e)
+            continue
+
+        st = e.get(source_type_field, "")
+
+        if entry_type == "judgment":
+            # Judgment rows: eligible if tagged (human taste = human perspective)
+            if is_judgment_labs_eligible(e):
+                eligible.append(e)
+            else:
+                rejected.append(e)
+        else:
+            # Raw material: only human_capture passes
+            if is_labs_eligible(st):
+                eligible.append(e)
+            else:
+                rejected.append(e)
+
     if rejected:
-        # Visible in logs — silent provenance drift is the failure mode this
-        # module exists to prevent.
         logger.warning(
-            "blocked %d stock/ai/unprovenanced entries from Labs (of %d total)",
-            len(rejected), len(entries)
+            "blocked %d stock/ai/unprovenanced entries from Labs (of %d total, type=%s)",
+            len(rejected), len(entries), entry_type
         )
     return eligible, rejected
 
 
-def assert_labs_safe(entries: List[Dict[str, Any]]) -> None:
+def assert_labs_safe(
+    entries: List[Dict[str, Any]],
+    entry_type: str = "raw",
+) -> None:
     """
     Hard-fail variant for export paths that must NEVER ship stock.
 
     Raises ProvenanceViolation if any entry is not Labs-eligible. Use this in
     the Seed Package publisher (p2p_exchange) where a silent block is not
     enough — the publish should fail loudly.
+
+    Args:
+        entries: list of dicts to check.
+        entry_type: "raw" (default, only human_capture passes) or
+                    "judgment" (tagged rows pass).
     """
-    _, rejected = filter_for_labs(entries)
+    _, rejected = filter_for_labs(entries, entry_type=entry_type)
     if rejected:
-        sample = rejected[0].get("source_type", "<missing>")
+        # Safely get source_type from first rejected (might be non-dict)
+        first = rejected[0]
+        if isinstance(first, dict):
+            sample = first.get("source_type", "<missing>")
+        else:
+            sample = f"<non-dict: {type(first).__name__}>"
         raise ProvenanceViolation(
             f"{len(rejected)} entries blocked from Labs Seed publish. "
             f"First rejected source_type: {sample}. "
-            f"Stock/unprovenanced material cannot enter the Labs network. "
+            f"Stock/ai/unprovenanced material cannot enter the Labs network. "
             f"See docs/LOOP-STRATEGY.md § The hybrid seed."
         )

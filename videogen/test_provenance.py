@@ -112,6 +112,47 @@ class TestFilterForLabs:
         assert len(elig) == 1
         assert len(rej) == 0
 
+    def test_judgment_rows_tagged_eligible(self):
+        """Judgment rows about stock are eligible (hybrid seed)."""
+        rows = [
+            {"source_type": "stock:pexels", "decision": "accepted"},
+            {"source_type": "ai_generated:h3", "decision": "rejected"},
+            {"source_type": "human_capture:glasses", "decision": "accepted"},
+        ]
+        elig, rej = filter_for_labs(rows, entry_type="judgment")
+        assert len(elig) == 3  # all tagged → all eligible as judgments
+        assert len(rej) == 0
+
+    def test_judgment_rows_untagged_rejected(self):
+        """Judgment rows without source_type are rejected (fail closed)."""
+        rows = [
+            {"source_type": "stock:pexels", "decision": "accepted"},
+            {"decision": "accepted"},  # no source_type!
+        ]
+        elig, rej = filter_for_labs(rows, entry_type="judgment")
+        assert len(elig) == 1
+        assert len(rej) == 1
+
+    def test_non_dict_entries_rejected(self):
+        """Non-dict entries (strings, ints, None) are rejected, not crashed."""
+        rows = [
+            {"source_type": "human_capture:glasses"},
+            "not a dict",
+            42,
+            None,
+            ["list"],
+        ]
+        elig, rej = filter_for_labs(rows)
+        assert len(elig) == 1
+        assert len(rej) == 4
+
+    def test_ai_generated_blocked_in_raw_mode(self):
+        """AI-generated content blocked from Labs in raw material mode."""
+        rows = [{"source_type": "ai_generated:minimax_h3"}]
+        elig, rej = filter_for_labs(rows, entry_type="raw")
+        assert len(elig) == 0
+        assert len(rej) == 1
+
 
 class TestAssertLabsSafe:
     def test_all_safe_passes(self):
