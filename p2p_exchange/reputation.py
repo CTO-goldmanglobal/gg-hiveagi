@@ -1,168 +1,202 @@
 """
-Reputation system — web-of-trust for P2P tag exchange.
+Spam filter — the machine's only job is moving junk out of the human's way.
 
-Addresses DeepSeek's finding:
-  "There is a real risk of malicious nodes publishing bad tags."
+Like an email spam folder: the machine doesn't decide trust. It just
+filters obvious junk so the human's inbox (appreciation board + contribution
+board) only contains things worth looking at.
 
-Design:
-  - Each node maintains a local reputation score for every peer it has
-    interacted with
-  - Reputation starts at 0 (neutral)
-  - Positive interactions (useful tags, valid signatures) increase score
-  - Negative interactions (invalid signatures, rejected tags, spam) decrease
-  - Tags from low-reputation peers are weighted lower or ignored
-  - No central authority — reputation is local to each node
+How it works:
+  - New peer: passes filter (goes to inbox)
+  - Invalid signature: spam (filtered)
+  - Invalid signature again: spam (stays filtered)
+  - Multiple rejected tags: maybe spam (flagged, human decides)
+  - Valid signatures + accepted tags: stays in inbox (no action needed)
 
-The reputation data is private to each node (not shared via IPFS).
+The machine NEVER decides "trusted." Only humans express trust (appreciation
+board). The machine only decides "is this junk?"
+
+The human can always check the spam folder — just like email, real
+perspective data might occasionally end up filtered. The human is the
+final arbiter, not the machine.
 """
 
 import json
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List
 
 
-# Reputation thresholds
-REPUTATION_NEUTRAL = 0.0       # default for new peers
-REPUTATION_TRUSTED = 5.0       # tags accepted by default
-REPUTATION_UNTRUSTED = -5.0    # tags ignored
-PUBLISH_GATE = 1.0             # minimum reputation to publish tags
-
-# Score changes
-SCORE_GOOD_TAG = 0.1           # tag accepted by another node
-SCORE_BAD_TAG = -0.5           # tag rejected / flagged
-SCORE_VALID_SIGNATURE = 0.05   # valid signed package received
-SCORE_INVALID_SIGNATURE = -5.0 # invalid signature (serious — possible forgery)
-SCORE_SPAM = -5.0              # spam detected
-SCORE_USEFUL_OVERRIDE = 0.2    # human found peer's override useful
+# Spam detection thresholds (machine-operated, human-overridable)
+SPAM_THRESHOLD = -3.0         # at or below → spam folder
+FLAG_THRESHOLD = 0.0          # below 0 but above spam → flagged (check)
+INVALID_SIG_PENALTY = -2.0    # each invalid signature
+BAD_TAG_PENALTY = -0.5        # each rejected tag
+SPAM_REPORT_PENALTY = -3.0    # explicit spam report (immediate spam)
+GOOD_TAG_BONUS = 0.05         # each accepted tag (keeps healthy peers healthy)
 
 
-class ReputationStore:
+class SpamFilter:
     """
-    Local reputation store for peers.
+    Machine-operated spam filter for incoming tags/Seed Packages.
 
-    Stored as JSON in the node's local data (not shared via IPFS).
-    Each entry: peer_id → {score, interactions, last_updated}
+    Like email spam: fast, automatic, imperfect, human-overridable.
+    Stored locally per node (not shared — it's machine opinion, not human).
     """
 
     def __init__(self, store_path: Path):
         self.path = Path(store_path)
-        self._store: Dict[str, Dict[str, Any]] = {}
+        self._scores: Dict[str, Dict[str, Any]] = {}
         self._load()
 
     def _load(self) -> None:
-        """Load reputation from disk."""
         if self.path.exists():
             try:
-                self._store = json.loads(self.path.read_text(encoding="utf-8"))
+                self._scores = json.loads(self.path.read_text(encoding="utf-8"))
             except (json.JSONDecodeError, OSError):
-                self._store = {}
+                self._scores = {}
 
     def _save(self) -> None:
-        """Save reputation to disk."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(
-            json.dumps(self._store, indent=2, ensure_ascii=False),
+            json.dumps(self._scores, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
 
-    def get_score(self, peer_id: str) -> float:
-        """Get reputation score for a peer (default: neutral)."""
-        entry = self._store.get(peer_id)
-        if entry is None:
-            return REPUTATION_NEUTRAL
-        return entry.get("score", REPUTATION_NEUTRAL)
-
-    def get_status(self, peer_id: str) -> str:
-        """Get reputation status: trusted / neutral / untrusted."""
-        score = self.get_score(peer_id)
-        if score >= REPUTATION_TRUSTED:
-            return "trusted"
-        if score <= REPUTATION_UNTRUSTED:
-            return "untrusted"
-        return "neutral"
-
-    def can_publish(self, peer_id: str) -> bool:
-        """Check if a peer has enough reputation to publish tags."""
-        return self.get_score(peer_id) >= PUBLISH_GATE
-
-    def should_accept_tags(self, peer_id: str) -> bool:
-        """Check if tags from this peer should be accepted (not ignored)."""
-        return self.get_score(peer_id) > REPUTATION_UNTRUSTED
-
-    def record_interaction(
-        self,
-        peer_id: str,
-        event: str,
-        score_delta: float,
-        detail: str = "",
-    ) -> float:
-        """
-        Record a reputation event for a peer.
-
-        Args:
-            peer_id: the peer's identity
-            event: what happened (e.g., "good_tag", "invalid_sig")
-            score_delta: how much to adjust score
-            detail: optional context
-
-        Returns:
-            The peer's new score.
-        """
-        if peer_id not in self._store:
-            self._store[peer_id] = {
-                "score": REPUTATION_NEUTRAL,
-                "interactions": 0,
+    def _ensure_entry(self, peer_id: str) -> None:
+        if peer_id not in self._scores:
+            self._scores[peer_id] = {
+                "score": 0.0,
                 "events": [],
+                "in_spam": False,
                 "first_seen": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             }
 
-        entry = self._store[peer_id]
-        entry["score"] = round(entry["score"] + score_delta, 2)
-        entry["interactions"] = entry.get("interactions", 0) + 1
-        entry["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    def get_score(self, peer_id: str) -> float:
+        entry = self._scores.get(peer_id)
+        return entry["score"] if entry else 0.0
 
-        # Keep last 20 events (prevent unbounded growth)
-        events = entry.get("events", [])
-        events.append({
-            "event": event,
-            "delta": score_delta,
-            "detail": detail[:100],
-            "at": entry["last_updated"],
-        })
-        entry["events"] = events[-20:]
+    def is_spam(self, peer_id: str) -> bool:
+        """Should this peer's tags go to the spam folder?"""
+        entry = self._scores.get(peer_id)
+        if not entry:
+            return False
+        if entry.get("manually_kept"):
+            return False
+        return entry.get("in_spam", False) or entry["score"] <= SPAM_THRESHOLD
 
+    def is_flagged(self, peer_id: str) -> bool:
+        """Should the human be warned about this peer? (not full spam)"""
+        if self.is_spam(peer_id):
+            return False
+        entry = self._scores.get(peer_id)
+        if not entry:
+            return False
+        return entry["score"] < FLAG_THRESHOLD
+
+    def should_show_in_inbox(self, peer_id: str) -> bool:
+        """Should this peer's tags appear in the human's main view?"""
+        return not self.is_spam(peer_id)
+
+    def record_invalid_signature(self, peer_id: str) -> float:
+        """Invalid signature detected — likely forgery or corruption."""
+        self._ensure_entry(peer_id)
+        entry = self._scores[peer_id]
+        entry["score"] = round(entry["score"] + INVALID_SIG_PENALTY, 2)
+        self._check_spam_status(peer_id)
+        self._log_event(peer_id, "invalid_sig", INVALID_SIG_PENALTY)
         self._save()
         return entry["score"]
 
-    def record_good_tag(self, peer_id: str, detail: str = "") -> float:
-        """A tag from this peer was accepted (useful)."""
-        return self.record_interaction(peer_id, "good_tag", SCORE_GOOD_TAG, detail)
+    def record_bad_tag(self, peer_id: str, reason: str = "") -> float:
+        """A tag from this peer was rejected by the human or schema."""
+        self._ensure_entry(peer_id)
+        entry = self._scores[peer_id]
+        entry["score"] = round(entry["score"] + BAD_TAG_PENALTY, 2)
+        self._check_spam_status(peer_id)
+        self._log_event(peer_id, "bad_tag", BAD_TAG_PENALTY, reason)
+        self._save()
+        return entry["score"]
 
-    def record_bad_tag(self, peer_id: str, detail: str = "") -> float:
-        """A tag from this peer was rejected (not useful)."""
-        return self.record_interaction(peer_id, "bad_tag", SCORE_BAD_TAG, detail)
+    def record_spam_report(self, peer_id: str) -> float:
+        """Explicit spam report from a human."""
+        self._ensure_entry(peer_id)
+        entry = self._scores[peer_id]
+        entry["score"] = round(entry["score"] + SPAM_REPORT_PENALTY, 2)
+        self._check_spam_status(peer_id)
+        self._log_event(peer_id, "spam_report", SPAM_REPORT_PENALTY)
+        self._save()
+        return entry["score"]
 
-    def record_valid_signature(self, peer_id: str) -> float:
-        """Received a valid signed package from this peer."""
-        return self.record_interaction(peer_id, "valid_sig", SCORE_VALID_SIGNATURE)
+    def record_good_tag(self, peer_id: str) -> float:
+        """A tag from this peer was accepted (healthy signal)."""
+        self._ensure_entry(peer_id)
+        entry = self._scores[peer_id]
+        entry["score"] = round(entry["score"] + GOOD_TAG_BONUS, 2)
+        self._log_event(peer_id, "good_tag", GOOD_TAG_BONUS)
+        self._save()
+        return entry["score"]
 
-    def record_invalid_signature(self, peer_id: str) -> float:
-        """Received an invalid signature (serious — possible forgery)."""
-        return self.record_interaction(peer_id, "invalid_sig", SCORE_INVALID_SIGNATURE)
+    def manual_keep(self, peer_id: str) -> None:
+        """Human overrides: 'this is NOT spam, keep it in my inbox.'"""
+        self._ensure_entry(peer_id)
+        self._scores[peer_id]["manually_kept"] = True
+        self._scores[peer_id]["in_spam"] = False
+        self._log_event(peer_id, "manual_keep", 0, "human override: not spam")
+        self._save()
 
-    def record_spam(self, peer_id: str) -> float:
-        """Spam detected from this peer."""
-        return self.record_interaction(peer_id, "spam", SCORE_SPAM)
+    def manual_spam(self, peer_id: str) -> None:
+        """Human overrides: 'this IS spam, filter it.'"""
+        self._ensure_entry(peer_id)
+        self._scores[peer_id]["in_spam"] = True
+        self._log_event(peer_id, "manual_spam", 0, "human override: is spam")
+        self._save()
+
+    def _check_spam_status(self, peer_id: str) -> None:
+        """Update spam flag based on score (unless manually overridden)."""
+        entry = self._scores[peer_id]
+        if entry.get("manually_kept"):
+            entry["in_spam"] = False
+            return
+        entry["in_spam"] = entry["score"] <= SPAM_THRESHOLD
+
+    def _log_event(self, peer_id: str, event: str, delta: float, detail: str = "") -> None:
+        entry = self._scores[peer_id]
+        events = entry.get("events", [])
+        events.append({
+            "event": event,
+            "delta": delta,
+            "detail": detail[:80],
+            "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        })
+        entry["events"] = events[-20:]  # keep last 20
+        entry["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+    def get_spam_list(self) -> List[str]:
+        """Get all peer IDs currently in spam folder."""
+        return [pid for pid, entry in self._scores.items() if self.is_spam(pid)]
+
+    def get_flagged_list(self) -> List[str]:
+        """Get all peer IDs flagged for human attention."""
+        return [pid for pid in self._scores if self.is_flagged(pid)]
 
     def summary(self) -> Dict[str, Any]:
-        """Get a summary of all tracked peers."""
+        """Spam folder summary."""
         return {
-            "total_peers": len(self._store),
-            "trusted": sum(1 for p in self._store.values()
-                          if p.get("score", 0) >= REPUTATION_TRUSTED),
-            "neutral": sum(1 for p in self._store.values()
-                          if REPUTATION_UNTRUSTED < p.get("score", 0) < REPUTATION_TRUSTED),
-            "untrusted": sum(1 for p in self._store.values()
-                             if p.get("score", 0) <= REPUTATION_UNTRUSTED),
+            "total_peers_tracked": len(self._scores),
+            "in_spam": len(self.get_spam_list()),
+            "flagged": len(self.get_flagged_list()),
+            "in_inbox": sum(1 for pid in self._scores if self.should_show_in_inbox(pid)),
         }
+
+    def render_spam_report(self) -> str:
+        """Human-readable spam folder status."""
+        s = self.summary()
+        lines = [
+            f"  📧 Inbox: {s['in_inbox']} peers",
+            f"  🚩 Flagged: {s['flagged']} peers (human should check)",
+            f"  🗑️  Spam: {s['in_spam']} peers (auto-filtered)",
+        ]
+        spam_list = self.get_spam_list()
+        if spam_list:
+            lines.append(f"     {', '.join(spam_list[:5])}")
+        return "\n".join(lines)
