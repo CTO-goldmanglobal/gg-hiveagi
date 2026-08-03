@@ -269,6 +269,7 @@ Append a line per engineering decision that future-you (or the next CCO) would n
 Format: `YYYY-MM-DD — decision — why — status`.
 
 ```
+2026-08-04 — CI was red on EVERY push since 615c177 (pre-existing, not schema PR's fault): two stacked defects — (1) CI never installed pytest-cov so addopts' --cov flags crashed pytest, (2) CI ran only 4 hand-named test files → 24% < gate. Fixed: install requirements-dev.txt, run full suite via testpaths. Gate now real in CI (145 tests, 30% floor). — DONE
 2026-08-03 — Structural: added videogen/clip_pool/models.py (pydantic v2 schema: Candidate/PoolManifest/ClipTag/Verdict + resolve_local_path). Unified 7 duplicated path resolvers, single MANIFEST_SCHEMA_VERSION. Backward-compatible (disk JSON unchanged). Advances C2/C3/C5/C6. — DONE
 2026-08-03 — §3 invariant #1 strengthened: g0_experiment.py no longer drops source_type on clip load; non-Labs pools now emit an auditable notice (not a block — gate stays at p2p export per invariant wording). — DONE
 2026-08-03 — DeepSeek review of models.py surfaced a real prefix bug in the duplicated resolver (.replace vs .removeprefix) + path-traversal risk; both fixed + regression tests added. Note: review harness truncates DeepSeek response (~300 chars) — tooling bug to fix later. — DONE
