@@ -21,4 +21,4 @@
 # assertions still pass on the new version, then merge.
 
 opencv-python==5.0.0.93
-mediapipe==0.10.35
+mediapipe==1.0.0
