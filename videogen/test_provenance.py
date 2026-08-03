@@ -15,11 +15,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from videogen.provenance import (
-    is_stock, is_human_capture, is_labs_eligible,
+    is_stock, is_ai_generated, is_human_capture, is_labs_eligible,
     is_judgment_labs_eligible, filter_for_labs, assert_labs_safe,
     can_share_to_labs, assert_share_consent,
     ProvenanceViolation, ShareConsentViolation,
-    SOURCE_STOCK, SOURCE_HUMAN, AREA_OPEN, AREA_COMMERCIAL,
+    SOURCE_STOCK, SOURCE_AI, SOURCE_HUMAN, AREA_OPEN, AREA_COMMERCIAL,
 )
 
 
@@ -30,6 +30,12 @@ class TestSourceType:
     def test_stock_pixabay(self):
         assert is_stock("stock:pixabay") is True
 
+    def test_ai_generated_h3(self):
+        assert is_ai_generated("ai_generated:minimax_h3") is True
+
+    def test_ai_generated_sora(self):
+        assert is_ai_generated("ai_generated:sora") is True
+
     def test_human_glasses(self):
         assert is_human_capture("human_capture:glasses") is True
 
@@ -38,16 +44,21 @@ class TestSourceType:
 
     def test_empty_fails_closed(self):
         assert is_stock("") is False
+        assert is_ai_generated("") is False
         assert is_human_capture("") is False
 
     def test_unknown_fails_closed(self):
         assert is_stock("unknown") is False
+        assert is_ai_generated("unknown") is False
         assert is_human_capture("unknown") is False
 
 
 class TestLabsEligible:
     def test_stock_blocked(self):
         assert is_labs_eligible("stock:pexels") is False
+
+    def test_ai_generated_blocked(self):
+        assert is_labs_eligible("ai_generated:minimax_h3") is False
 
     def test_human_allowed(self):
         assert is_labs_eligible("human_capture:glasses") is True
