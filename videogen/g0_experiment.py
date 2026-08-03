@@ -189,11 +189,11 @@ def generate_experiment_html(
     for shot in manifest.get("shots", []):
         for cand in shot.get("candidates", []):
             cid = cand["candidate_id"]
-            # Resolve path relative to pool dir
             local = pool_dir.parent / cand["local_path"]
             if not local.exists():
                 local = pool_dir / cand["local_path"].replace("pool/", "", 1)
-            clips_data[cid] = str(local.relative_to(pool_dir.parent))
+            rel = local.relative_to(pool_dir)
+            clips_data[cid] = str(rel)
 
     pairs_json = json.dumps(pairs, ensure_ascii=False)
     clips_json = json.dumps(clips_data, ensure_ascii=False)
@@ -203,60 +203,82 @@ def generate_experiment_html(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>G0 Experiment — {evaluator_id}</title>
+<title>G0 Experiment — {html.escape(evaluator_id)}</title>
 <style>
-  :root {{ --bg:#0f1115; --card:#1a1d24; --text:#e8e8e8; --muted:#8b919e; --accent:#e9206a; --ok:#3ecf8e; }}
-  * {{ box-sizing:border-box; }}
-  body {{ margin:0; background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }}
-  .header {{ padding:20px; text-align:center; border-bottom:1px solid #2a2e37; }}
-  .header h1 {{ font-size:18px; margin:0 0 4px; }}
-  .header .meta {{ color:var(--muted); font-size:13px; }}
-  .progress {{ background:#2a2e37; height:4px; border-radius:2px; margin:12px auto; width:80%; }}
+  :root {{ --bg:#0f1115; --card:#1a1d24; --text:#e8e8e8; --muted:#8b919e;
+    --accent:#e9206a; --ok:#3ecf8e; --border:#2a2e37; }}
+  * {{ box-sizing:border-box; margin:0; padding:0; }}
+  body {{ background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh; }}
+  .header {{ padding:16px 20px; text-align:center; border-bottom:1px solid var(--border);
+    position:sticky; top:0; background:var(--bg); z-index:10; }}
+  .header h1 {{ font-size:16px; margin-bottom:4px; }}
+  .header .meta {{ color:var(--muted); font-size:12px; }}
+  .progress {{ background:var(--border); height:3px; border-radius:2px; margin:8px auto 0; width:90%; }}
   .progress-bar {{ background:var(--accent); height:100%; border-radius:2px; transition:width 0.3s; }}
-  .pair {{ display:flex; gap:20px; justify-content:center; padding:20px; flex-wrap:wrap; }}
-  .clip {{ background:var(--card); border:1px solid #2a2e37; border-radius:10px; overflow:hidden; width:45%; min-width:300px; }}
-  .clip video {{ width:100%; display:block; max-height:250px; object-fit:cover; background:#000; }}
-  .clip .info {{ padding:8px 12px; font-size:12px; color:var(--muted); }}
-  .buttons {{ display:flex; gap:20px; justify-content:center; padding:20px; }}
-  .btn {{ padding:12px 32px; border:none; border-radius:8px; font-size:16px;
-    font-weight:600; cursor:pointer; transition:all 0.2s; }}
-  .btn-a {{ background:var(--accent); color:#fff; }}
-  .btn-b {{ background:var(--ok); color:#000; }}
-  .btn:hover {{ transform:scale(1.05); }}
-  .done {{ text-align:center; padding:40px; }}
-  .done a {{ color:var(--accent); text-decoration:none; font-size:16px; }}
+  .pair-container {{ padding:20px; }}
+  .pair {{ display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:900px; margin:0 auto; }}
+  @media(max-width:600px) {{ .pair {{ grid-template-columns:1fr; }} }}
+  .clip-card {{ background:var(--card); border:2px solid var(--border); border-radius:12px;
+    overflow:hidden; cursor:pointer; transition:border-color 0.2s, transform 0.1s; }}
+  .clip-card:hover {{ border-color:var(--muted); }}
+  .clip-card.selected {{ border-color:var(--ok); }}
+  .clip-card .label {{ background:var(--accent); color:#fff; padding:6px 12px;
+    font-weight:700; font-size:14px; text-align:center; }}
+  .clip-card.b .label {{ background:var(--ok); color:#000; }}
+  .clip-card video {{ width:100%; display:block; max-height:280px; object-fit:cover; background:#000; }}
+  .clip-card .info {{ padding:8px 12px; font-size:11px; color:var(--muted); font-family:monospace; }}
+  .clip-card .pick-btn {{ width:100%; padding:10px; border:none;
+    background:var(--border); color:var(--text); font-size:14px; font-weight:600;
+    cursor:pointer; transition:background 0.2s; }}
+  .clip-card .pick-btn:hover {{ background:var(--accent); color:#fff; }}
+  .clip-card.b .pick-btn:hover {{ background:var(--ok); color:#000; }}
+  .nav {{ display:flex; justify-content:center; gap:12px; padding:20px; }}
+  .skip-btn {{ padding:10px 20px; background:transparent; border:1px solid var(--border);
+    color:var(--muted); border-radius:8px; cursor:pointer; font-size:13px; }}
+  .done {{ text-align:center; padding:60px 20px; }}
+  .done h2 {{ font-size:20px; margin-bottom:12px; }}
+  .done a {{ color:var(--accent); text-decoration:none; font-size:16px;
+    display:inline-block; padding:12px 24px; border:1px solid var(--accent); border-radius:8px; }}
   .hidden {{ display:none; }}
 </style>
 </head>
 <body>
+
 <div class="header">
-  <h1>G0 Pairwise Experiment</h1>
-  <div class="meta">Evaluator: {html.escape(evaluator_id)} · Pair <span id="current">1</span> / <span id="total">{len(pairs)}</span></div>
+  <h1>G0 Pairwise — Which clip would you keep?</h1>
+  <div class="meta">Evaluator: {html.escape(evaluator_id)} · Question <span id="current">1</span> of <span id="total">{len(pairs)}</span></div>
   <div class="progress"><div class="progress-bar" id="bar" style="width:0%"></div></div>
 </div>
 
-<div id="experiment">
-  <div class="pair" id="pair-display">
-    <div class="clip">
-      <video id="video-a" controls preload="none"></video>
-      <div class="info" id="info-a">Clip A</div>
+<div id="experiment" class="pair-container">
+  <div class="pair">
+    <div class="clip-card" id="card-a" onclick="selectCard('A')">
+      <div class="label">LEFT</div>
+      <video id="video-a" controls preload="auto" playsinline></video>
+      <div class="info" id="info-a"></div>
+      <button class="pick-btn" onclick="event.stopPropagation();choose('A')">← Keep this one</button>
     </div>
-    <div class="clip">
-      <video id="video-b" controls preload="none"></video>
-      <div class="info" id="info-b">Clip B</div>
+    <div class="clip-card b" id="card-b" onclick="selectCard('B')">
+      <div class="label">RIGHT</div>
+      <video id="video-b" controls preload="auto" playsinline></video>
+      <div class="info" id="info-b"></div>
+      <button class="pick-btn" onclick="event.stopPropagation();choose('B')">Keep this one →</button>
     </div>
   </div>
-  <div class="buttons">
-    <button class="btn btn-a" onclick="choose('A')">Keep A</button>
-    <button class="btn btn-b" onclick="choose('B')">Keep B</button>
+  <div class="nav">
+    <input type="text" id="note" placeholder="Why? (optional — your reason is the seed data)"
+      style="width:400px;max-width:90%;padding:10px 14px;background:var(--card);border:1px solid var(--border);
+      border-radius:8px;color:var(--text);font-size:14px;outline:none;">
+    <button class="skip-btn" onclick="choose('skip')">Skip (can't decide)</button>
   </div>
 </div>
 
 <div id="complete" class="hidden done">
-  <h2>Experiment complete! 🎉</h2>
-  <p>Download your results:</p>
-  <a id="download" href="#">Download results JSON</a>
+  <h2>Done! 🎉</h2>
+  <p style="color:var(--muted);margin-bottom:20px;">You completed <span id="done-count">0</span> comparisons.</p>
+  <a id="download" href="#" download="">Download results JSON</a>
 </div>
 
 <script>
@@ -270,6 +292,7 @@ function showPair() {{
   if (currentIndex >= pairs.length) {{
     document.getElementById('experiment').classList.add('hidden');
     document.getElementById('complete').classList.remove('hidden');
+    document.getElementById('done-count').textContent = results.length;
     const blob = new Blob([JSON.stringify(results, null, 2)], {{type:'application/json'}});
     const url = URL.createObjectURL(blob);
     document.getElementById('download').href = url;
@@ -277,23 +300,38 @@ function showPair() {{
     return;
   }}
   const pair = pairs[currentIndex];
+  const pathA = clipPaths[pair.clip_a] || '';
+  const pathB = clipPaths[pair.clip_b] || '';
+
   const va = document.getElementById('video-a');
   const vb = document.getElementById('video-b');
-  va.src = clipPaths[pair.clip_a] || '';
-  vb.src = clipPaths[pair.clip_b] || '';
+  va.src = pathA;
+  va.load();
+  vb.src = pathB;
+  vb.load();
+
   document.getElementById('info-a').textContent = pair.clip_a;
   document.getElementById('info-b').textContent = pair.clip_b;
+  document.getElementById('card-a').classList.remove('selected');
+  document.getElementById('card-b').classList.remove('selected');
   document.getElementById('current').textContent = currentIndex + 1;
   document.getElementById('bar').style.width = (currentIndex / pairs.length * 100) + '%';
 }}
 
+function selectCard(side) {{
+  document.querySelectorAll('.clip-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('card-' + side.toLowerCase()).classList.add('selected');
+}}
+
 function choose(choice) {{
   const pair = pairs[currentIndex];
+  const note = document.getElementById('note').value.trim();
   results.push({{
     pair_id: pair.pair_id,
-    clip_a: pair.clip_a,
-    clip_b: pair.clip_b,
+    left_clip: pair.clip_a,
+    right_clip: pair.clip_b,
     choice: choice,
+    note: note,
     evaluator_id: evaluatorId,
     timestamp: new Date().toISOString(),
     is_repeat: pair.is_repeat,
@@ -301,8 +339,10 @@ function choose(choice) {{
     model_prediction: pair.model_prediction,
     type: pair.type,
   }});
+  document.getElementById('note').value = '';
   currentIndex++;
   showPair();
+  window.scrollTo(0, 0);
 }}
 
 showPair();
