@@ -1,0 +1,38 @@
+{
+  "overall_verdict": "honest-with-flags",
+  "confidence": 7,
+  "one_line": "The fake backstory appears stripped and the operator voice is mostly believable, but the document still inflates the founder's track record, cites unverifiable metrics as proof, and never acknowledges the fabrication that forced this correction.",
+  "fabrication_residual": [
+    "over two decades capturing it the old-fashioned way, across six industries, one operating decision at a time — the document lists five operating industries and counts a venture that is only launching this year as the sixth, inflating the track record.",
+    "this year, AI is launching a new coach-charter and travel venture inside the group — the subject 'AI' is confusing; as written it implies an entity named AI is launching a venture, not a human/company action.",
+    "when the mountains close every road, the village appears only to the traveler who was free to wander — reads as decorative mysticism rather than an operator's actual experience; its specific 'village' payoff is not grounded in any real event.",
+    "What runs through all of those businesses is not code — it is operational judgment... built in the operator, across industries, over years — generic enough to sound plausible, but no concrete incident is named to anchor it."
+  ],
+  "claims_not_in_record": [
+    "provenance gate hardened from 4/10 to 8/10 through a DeepSeek review loop",
+    "test coverage raised from 24% to 30% with a gate that now actually fails CI",
+    "Chief Code Operator role with a defined authority and acceptance criteria",
+    "the plugin — the vibe-coding tool — as a third system in the architecture"
+  ],
+  "strongest_passage": "What an operator sees that a technologist misses — the 'market for judgment' argument is the most honest and operationally grounded section; it ties the thesis to real business instincts without overclaiming.",
+  "weakest_passage": "The plugin paragraph in 'Why this shape' — its rationale ('needs to move fast without paying cloud tax on every decision') is vague, and the 'village' proverb is the most AI-sounding line in the document.",
+  "tone_assessment": "mixed — the middle sections sound like a real operator; the framing sections ('three circles', the village proverb, the anaphoric 'it is built in the operator...') have the cadence of AI attempting operator authenticity. The specific business examples (supplier tolerance, client changing their mind, route timing) are plausible but generic enough to be manufactured.",
+  "answers_to_criteria": {
+    "1": "No fabricated travel-operator backstory survives visibly; the correction appears to have worked. Remaining flags: 'six industries' overcounts, 'AI is launching' is ambiguous, and the document never mentions that an earlier version contained invented biography — a serious honesty gap given the bar set by the prior fabrication.",
+    "2": "The concrete claims (4/10→8/10, 24%→30%, CI gate, CCO role) are specific and plausible but unverifiable from this document; no links, commit hashes, PRs, or repo artifacts are cited. They read as evidence but are presented as bare assertions.",
+    "3": "Real detail: Goldman Global's actual verticals, ExploreChina Holidays, coverage percentages, CI gate failing, CCO role. Generic filler: 'the call a buyer makes', 'the read an operator has', the village proverb. The document leans more on believable-sounding generality than on named, checkable specifics.",
+    "4": "Coherent with the stated doctrine and architecture: honest provenance, human consent, open-but-differentiated, seed as strongest attractor. The plugin's 'permitted serendipity' creates mild tension with drift-quarantining, but the document addresses it by requiring honest labeling when plugin output enters the lab.",
+    "5": "A skeptical reviewer would initially be disarmed by the candid admission of a fragile codebase, but would stop believing at three points: unverifiable metrics offered as proof, 'six industries' overclaiming, and the complete absence of any acknowledgment of the prior fabrication — which a knowledgeable skeptic would read as evasive.",
+    "6": "Mixed. The 'market for judgment' section is convincingly operator-like; the 'three circles' and 'village' passages read like AI performing folksy wisdom. The tell is the aphoristic, symmetrical prose ('the long thing... the near thing', 'the mountains... the village') that real operators rarely produce unprompted.",
+    "7": "The document acknowledges the non-technical founder risk and the unvalidated AGI thesis, which is good. It does not acknowledge the prior fabrication at all. That omission is the single biggest self-awareness failure and should be fixed before publishing.",
+    "8": "The most credibility-damaging sentence is 'over two decades capturing it the old-fashioned way, across six industries' — because a skeptic can count five listed industries, see that the sixth is only launching this year, and recognize the same pattern of inflation that produced the earlier fabricated backstory."
+  },
+  "would_a_skeptic_buy_it": false,
+  "fix_before_publishing": [
+    "Add a short, direct acknowledgment of the earlier fabricated backstory and what was corrected — silence reads as evasion.",
+    "Replace 'six industries' with precise wording: five operating businesses and a sixth venture launching this year.",
+    "Clarify the sentence 'this year, AI is launching...' — who or what is doing the launching?",
+    "Link the metrics to actual repo artifacts: CI badge, commit/PR references, or the relevant sections of UNIFIED-ARCHITECTURE-v3.md.",
+    "Cut or rewrite the 'village' proverb; it reads as ornament, not operator experience."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "overall_verdict": "honest-with-flags",
+  "confidence": 6,
+  "would_a_skeptic_buy_it": true,
+  "one_line": "All five flagged fixes landed cleanly — the explicit fabrication disclosure is a genuine credibility move — but the unverifiable precision of the metrics and the reintroduced travel-venture specifics keep it one notch from fully clean.",
+  "fixes_verified": {
+    "six_industries": "fixed",
+    "acknowledgment": "fixed",
+    "ai_launcher": "fixed",
+    "village_proverb": "fixed",
+    "metric_links": "fixed"
+  },
+  "remaining_issues": [
+    "Metrics (4/10→8/10 provenance gate, 24%→30% coverage, 42 tests) are cited with file paths and PR #12, but none are externally verifiable from the document — a skeptic must take them on faith.",
+    "The sixth vertical — coach-charter/travel with ExploreChina Holidays — is reintroduced as live detail; since the prior fabrication involved fake travel-operator specifics, this adjacent claim still warrants external check.",
+    "The disclosure paragraph asserts the history ('caught, stripped, rewritten') with no corroboration — it is a strong rhetorical move, but it is still an unverifiable claim about the document's own past."
+  ],
+  "new_concerns": [
+    "The acknowledgment may function as preemptive inoculation: by confessing past fabrication, the document discourages further scrutiny of its remaining unverifiable specifics.",
+    "The inline references (RE-AUDIT.json, test_provenance.py, PR #12, CCO-HANDOFF.md) are paths, not links — semantically present but not clickable/verifiable from this file.",
+    "The tone of the disclosure is polished enough to read as a crafted trust-recovery strategy rather than an off-the-cuff confession."
+  ],
+  "tone_now": "mixed — the voice is largely that of a real operator, and the disclosure paragraph reads as sincere, but the writing is polished enough that AI assistance remains probable; the concrete numbers and internal doc references push it toward genuine rather than generic."
+}
