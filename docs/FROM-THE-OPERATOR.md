@@ -6,38 +6,48 @@
 > v3.md`; the philosophy lives in `THE-SEED-DOCTRINE.md`. This document is the
 > bridge between them: why this founder, why now, why this shape.
 >
-> **Finn** — founder, Goldman Global / ExploreChina Holidays.
+> **Finn** — founder, Goldman Global (`goldmanglobal.com.au`), a group operating
+> since 2003 across printing, design, web development, investing, and transport.
+> ExploreChina Holidays is the tourism face; this year, AI is launching a new
+> coach-charter and travel venture inside the group.
 
 ---
 
 ## Why an operator is building this
 
-I am not an engineer by training. I am a travel operator. For years I have run
-a business that takes people to China — the real China, the one a tourist
-cannot find alone — and what I have learned in that time is not code. It is
-attention. I know which temple entrance makes a visitor go quiet. I know that
-the same teahouse is the right recommendation at four in the afternoon and the
-wrong one at nine in the morning. I know that the difference between a trip a
-client forgets and a trip they tell their friends about for a decade is not the
-itinerary. It is the moment someone *noticed* something, and someone else was
-there to honour that noticing.
+I am not an engineer by training. I am an operator. Goldman Global has been my
+group since 2003, and in that time it has operated across printing, design,
+web development, investing, and transport. This year, AI is launching a new
+coach-charter and travel venture inside the group, with ExploreChina Holidays
+as the tourism face. What runs through all of those businesses is not code —
+it is operational judgment. The call a buyer makes on a supplier that will
+hold quality under volume. The read an operator has on when a market has
+shifted before the numbers confirm it. The sense that a process is about to
+fail before it fails. None of that is on the internet. It is built in the
+operator, across industries, over years.
 
 Every audit of this project has flagged the same thing: *the founder is not a
 technical person; that is a risk.* They are right about the risk. They are
 wrong to treat it as a weakness. The thesis of this entire project is that
 machine intelligence is missing exactly the kind of judgment an operator
-spends a career developing — the situated, time-and-place-and-event kind that
+builds across a career — the situated, time-and-place-and-event kind that
 cannot be scraped from the internet because the internet only keeps the
 conclusions, never the situation. So the person building this *should* be
-someone whose stock-in-trade is exactly that kind of judgment. The technical
-work is the part I can hire, partner, or automate. The operator's attention is
-the part the machine cannot generate. That is the asset.
+someone whose stock-in-trade is exactly that kind of judgment.
 
 I say this directly because it is the thing outsiders get wrong first. They
 look at the codebase, see a non-expert's hand in it, and conclude the project
-is fragile. The codebase is fragile — and it does not matter. The code is the
-scaffolding around a signal, and the signal is what an operator knows how to
-capture. Replace the scaffolding next year; the signal is what compounds.
+is fragile. The honest answer is that the codebase was fragile, and the team
+has been treating that as the problem it is — a provenance gate hardened from
+4/10 to 8/10 through a DeepSeek review loop, test coverage raised from 24% to
+30% with a gate that now actually fails CI, a Chief Code Operator role with a
+defined authority and acceptance criteria. The code is not disposable
+scaffolding around a signal. The code is the **instrument** that captures the
+signal honestly — and a bad instrument captures noise, or loses the signal
+entirely. The signal compounds *because* the instrument is sound, not in spite
+of the engineering effort it took to make it sound. That is why the
+engineering work is taken seriously here, and why it has its own role and its
+own review loop.
 
 ## What an operator sees that a technologist misses
 
@@ -46,25 +56,19 @@ with an edge-cloud cascade and a provenance-gated convergence layer. That is
 an accurate description of the machinery. It is also a description of the
 least important part.
 
-What I see, after years of running a business, is a **market for judgment**
+What I see, from operating across six industries, is a **market for judgment**
 that does not yet exist — because no one has built the instrument that records
 judgment honestly enough to trade on it.
 
-Consider the travel operator's daily problem. A client asks: should I extend
-the Xi'an stop by a day? There is no right answer on the internet. There is a
-right answer for *this* client, at *this* time of year, given *this* budget,
-travelling with *these* companions, after *this* sequence of stops already
-seen. The right answer is worth money — the client will pay for the better
-trip. But the right answer is locked inside one operator's head, dies when
-that operator retires, and cannot be scaled because it is not written down in
-a form any machine can use.
-
-Now generalize. Every skilled profession has this locked judgment: the
-doctor's read of a patient who is not quite presenting the textbook symptoms;
-the buyer's sense that this supplier will hold quality under volume; the
-editor's instinct for which sentence makes the reader stay. None of it is on
-the internet. All of it is valuable. And it is all dying, one retirement at a
-time.
+The pattern is the same in every business I have run. The buyer's call on
+which print supplier holds tolerance under volume. The web project where the
+operator knows the client will change their mind halfway through and prices
+for it before they ask. The transport operator who reads a route and knows,
+before the timetable is drawn, which slot will not hold. The investment call
+that depends on reading a management team, not the spreadsheet. In each case
+the right answer is worth money. In each case it is locked in one operator's
+head, dies when that operator moves on, and cannot be scaled because it is
+not written down in a form any machine can use.
 
 HiveAGI is the instrument that records that judgment in a form a machine can
 learn from — without lying about where it came from, without flattening the
@@ -176,7 +180,8 @@ imagination that no corpus contains. Whether the field turns that source into
 general intelligence is the field's problem, not mine. My job is to ensure
 that when the field reaches for that source, it exists, it is honest, and it
 was built by someone who understood what they were capturing — because they
-spent a career capturing it the old-fashioned way, one traveller at a time.
+have spent over two decades capturing it the old-fashioned way, across six
+industries, one operating decision at a time.
 
 That is the operator's case for this project. The machinery is in the
 architecture documents. The philosophy is in the doctrine. This note is the
