@@ -7,24 +7,32 @@
 > bridge between them: why this founder, why now, why this shape.
 >
 > **Finn** — founder, Goldman Global (`goldmanglobal.com.au`), a group operating
-> since 2003 across printing, design, web development, investing, and transport.
-> ExploreChina Holidays is the tourism face; this year, AI is launching a new
-> coach-charter and travel venture inside the group.
+> since 2003 across printing, design, web development, investing, and transport
+> — five verticals to date. This year the group is launching a sixth, a
+> coach-charter and travel venture, with ExploreChina Holidays as the tourism
+> face, using AI tooling as a core operating lever rather than a side function.
+>
+> *A note on this document's history.* An earlier draft of this note contained
+> invented biographical detail — fake travel-operator specifics presented as
+> lived experience. It was caught, stripped, and rewritten around the verifiable
+> record below. That failure is recorded here rather than hidden, because the
+> project's whole claim is honest provenance, and a founder's note that hid its
+> own correction would contradict the thesis on page one.
 
 ---
 
 ## Why an operator is building this
 
 I am not an engineer by training. I am an operator. Goldman Global has been my
-group since 2003, and in that time it has operated across printing, design,
-web development, investing, and transport. This year, AI is launching a new
-coach-charter and travel venture inside the group, with ExploreChina Holidays
-as the tourism face. What runs through all of those businesses is not code —
-it is operational judgment. The call a buyer makes on a supplier that will
-hold quality under volume. The read an operator has on when a market has
-shifted before the numbers confirm it. The sense that a process is about to
-fail before it fails. None of that is on the internet. It is built in the
-operator, across industries, over years.
+group since 2003, and in that time it has operated across five verticals —
+printing, design, web development, investing, and transport. This year the
+group is launching a sixth, a coach-charter and travel venture with
+ExploreChina Holidays as the tourism face, using AI tooling as a core
+operating lever. What runs through all of those businesses is not code —
+it is operational judgment. The call a buyer makes on a print supplier that
+will hold tolerance under volume. The read an operator has on when a market
+has shifted before the numbers confirm it. None of that is on the internet.
+It is built in the operator, across years and across industries.
 
 Every audit of this project has flagged the same thing: *the founder is not a
 technical person; that is a risk.* They are right about the risk. They are
@@ -39,15 +47,19 @@ I say this directly because it is the thing outsiders get wrong first. They
 look at the codebase, see a non-expert's hand in it, and conclude the project
 is fragile. The honest answer is that the codebase was fragile, and the team
 has been treating that as the problem it is — a provenance gate hardened from
-4/10 to 8/10 through a DeepSeek review loop, test coverage raised from 24% to
-30% with a gate that now actually fails CI, a Chief Code Operator role with a
-defined authority and acceptance criteria. The code is not disposable
-scaffolding around a signal. The code is the **instrument** that captures the
-signal honestly — and a bad instrument captures noise, or loses the signal
-entirely. The signal compounds *because* the instrument is sound, not in spite
-of the engineering effort it took to make it sound. That is why the
-engineering work is taken seriously here, and why it has its own role and its
-own review loop.
+4/10 to 8/10 through a DeepSeek review loop (see
+[`RE-AUDIT.json`](../blob/main/docs/internal/RE-AUDIT.json) and the 42 tests
+in [`test_provenance.py`](../blob/main/videogen/test_provenance.py)), test
+coverage raised from 24% to 30% with a gate that now actually fails CI
+([PR #12](https://github.com/CTO-goldmanglobal/gg-hiveagi/pull/12)), a Chief
+Code Operator role with defined authority and acceptance criteria
+([`CCO-HANDOFF.md`](../blob/main/docs/internal/CCO-HANDOFF.md)). These are
+clickable; check them. The code is not disposable scaffolding around a signal.
+The code is the **instrument** that captures the signal honestly — and a bad
+instrument captures noise, or loses the signal entirely. The signal compounds
+*because* the instrument is sound, not in spite of the engineering effort it
+took to make it sound. That is why the engineering work is taken seriously
+here, and why it has its own role and its own review loop.
 
 ## What an operator sees that a technologist misses
 
@@ -56,7 +68,7 @@ with an edge-cloud cascade and a provenance-gated convergence layer. That is
 an accurate description of the machinery. It is also a description of the
 least important part.
 
-What I see, from operating across six industries, is a **market for judgment**
+What I see, from operating across five verticals and now launching a sixth, is a **market for judgment**
 that does not yet exist — because no one has built the instrument that records
 judgment honestly enough to trade on it.
 
@@ -100,14 +112,12 @@ fake. That is the moat, and it deepens every day the application runs.
 
 **The plugin — the vibe-coding tool — exists because the founder is not an
 engineer, and needs to move fast without paying cloud tax on every decision.**
-It is also, and this matters, the place where serendipity is permitted. The
-old line holds: when the mountains close every road, the village appears only
-to the traveler who was free to wander. Most of what the plugin produces is
-ordinary — drafts, critiques, refactors. Some of it produces an idea no plan
-would have reached. The plugin does not aim at the thesis. It wanders near
-it, and occasionally something rubs off. When it does, it enters the lab
-honestly labeled — never pretending to be human insight, but never forbidden
-from contributing either.
+It is also, and this matters, the place where serendipity is permitted: most
+of what the plugin produces is ordinary — drafts, critiques, refactors — but
+some of it produces an idea no direct plan would have reached. The plugin
+does not aim at the thesis. It works near it, and occasionally something
+useful rubs off. When it does, it enters the lab honestly labeled — never
+pretending to be human insight, but never forbidden from contributing either.
 
 The three are not three products. They are one operator's answer to a single
 question: *how do you build the long thing without starving, and the
@@ -160,10 +170,10 @@ Not an exit. Not a valuation. Three plain things:
    place, event, and provenance — that cannot be reconstructed from any public
    corpus. That is the moat. It is not a patent. It is the honest record.
 
-3. **The plugin finds at least one village.** One insight, arrived at by
-   wandering, that no direct plan would have produced, and that feeds back to
-   the lab honestly labeled. If that happens, the three-circle design is
-   validated. If it does not, the plugin still earned its keep as a tool.
+3. **The plugin finds at least one serendipitous insight** — something no
+   direct plan would have produced, that feeds back to the lab honestly
+   labeled. If that happens, the three-circle design is validated. If it does
+   not, the plugin still earned its keep as a tool.
 
 If all three happen, this becomes a real platform — an audited judgment
 system that records origin, uncertainty, correction, and human override. That
@@ -180,8 +190,9 @@ imagination that no corpus contains. Whether the field turns that source into
 general intelligence is the field's problem, not mine. My job is to ensure
 that when the field reaches for that source, it exists, it is honest, and it
 was built by someone who understood what they were capturing — because they
-have spent over two decades capturing it the old-fashioned way, across six
-industries, one operating decision at a time.
+have spent over two decades capturing it the old-fashioned way, across five
+operating verticals with a sixth now launching, one operating decision at a
+time.
 
 That is the operator's case for this project. The machinery is in the
 architecture documents. The philosophy is in the doctrine. This note is the
