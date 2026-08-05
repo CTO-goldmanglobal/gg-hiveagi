@@ -1,0 +1,24 @@
+{
+  "overall_verdict": "honest-with-flags",
+  "confidence": 7,
+  "would_a_skeptic_buy_it": true,
+  "one_line": "Claude's six fixes all landed and the pattern-as-memory fabrication is gone; residual flags are that the 'verifiable record' is anonymous in-text and the Goldman=group=application mapping leaves the multi-year contracts (printing/email) disconnected from the judgment-data thesis (video/travel).",
+  "claude_fixes_verified": {
+    "real_operating_picture": "fixed",
+    "real_revenue_replaced": "fixed",
+    "metrics_reframed": "fixed",
+    "present_tense_fixed": "fixed",
+    "circular_closing_cut": "fixed",
+    "weakness_as_bet": "fixed"
+  },
+  "new_introduced_issues": [
+    "'Every audit of this project has flagged the same thing: the founder is not a technical person' overgeneralizes what the audits actually flagged, but it functions as rhetorical framing rather than deception.",
+    "'One LLM grading another LLM's code' is slightly loose if the codebase is largely human/LLM-assisted work by the non-engineer founder; the parenthetical caveat partially covers this."
+  ],
+  "neither_caught": [
+    "The Goldman-as-group vs Goldman-as-application seam: the cited multi-year stability evidence (textbook runs, email-server contracts) comes from verticals (printing, web) that produce none of the video/judgment data the thesis says the application's real output is; the judgment-data examples (tour, clip, client preference) belong to the just-launching sixth vertical, which has no multi-year contracts yet. 'The thesis is fed by everything the application teaches' bridges this by assertion, not argument.",
+    "The 'verifiable record' is asserted but not actually verifiable within the document: the ASX-listed education operator and the seven-plus email-server contracts are anonymous, with no links, leaving the same class of verification gap the earlier fabrication exploited — the residual doubt a hardened skeptic would still hold."
+  ],
+  "agree_with_claude_now": true,
+  "final_ship_recommendation": "ship"
+}
