@@ -1,0 +1,36 @@
+{
+  "overall_verdict": "honest-with-flags",
+  "confidence": 7,
+  "one_line": "Structurally honest and self-aware, but still leans on archetype-as-anecdote, present-tense overclaim of unbuilt systems, and self-graded AI audits dressed as evidence — the fabrication is gone, the embellishment reflex isn't.",
+  "fabrication_residual": [
+    "'The transport operator who reads a route and knows, before the timetable is drawn, which slot will not hold.' — and the parallel print/web/investment vignettes: these read as invented illustrative detail standing in for real anecdotes. They are archetypes in first-person framing ('The pattern is the same in every business I have run'), doing the rhetorical work of lived experience with zero checkable particular — the exact move that got flagged before, one abstraction layer up.",
+    "'So the application runs now, in the open, as a real business with real clients and real revenue' — bare assertion, no number, no named client, no volume. 'real revenue' repeated for emphasis is a tell, not evidence.",
+    "'The lab keeps it, structures it, and lets it compound' / 'That is the moat, and it deepens every day the application runs' — present tense for a capability that, per the architecture gates, is largely not built yet (capture/convergence blocked). Aspirational system described as operational.",
+    "'every client preference we record is a captured human judgment with full provenance' — 'full provenance' overclaims against the doc's own 8/10 self-grade and 30% coverage."
+  ],
+  "strongest_passage": "The AGI caveat: 'I do not know if AGI is reached on this timeline... the project does not build AGI. It builds the only thing I am confident is a prerequisite...' — genuinely disarming, rare in a founder note, and it lowers rather than inflates the claim. The fabrication-acknowledgment paragraph is a close second.",
+  "weakest_passage": "The closing self-designation: 'the founder is exactly the kind of human perspective the network is built to capture — and building the instrument is the most honest thing such a person can do.' Circular, self-flattering, and unfalsifiable — it uses the thesis to certify the founder, then the founder to certify the thesis.",
+  "tone_assessment": "mixed — Authentic and operator-real in the blunt admissions ('I am not an engineer. I am an operator'; the fabrication note; the AGI caveat). But the philosophical stretches slip into AI-performing-wisdom: relentless rule-of-three anaphora ('real business with real clients and real revenue'; 'it exists, it is honest, and it was built by someone'), abstract maxims ('the long thing without starving, and the near thing without going hollow'), and the 'my weakness is actually my strength' judo. The village proverb was cut; the aphoristic instinct that produced it wasn't.",
+  "would_a_skeptic_buy_it": false,
+  "fix_before_publishing": [
+    "Replace two of the archetypal vignettes with ONE real, dated, specific operator decision (named or anonymized but concrete: what, when, the call, the outcome). If you can't, label them explicitly as illustrative hypotheticals — don't present pattern as memory.",
+    "Put one real business number in (years, client count, videos shipped, revenue band) or delete 'real clients and real revenue' — an unbacked 'real X' reads worse than silence given the history.",
+    "Reframe the metrics honestly: 30% coverage and a 4/10→8/10 score are early hygiene, not proof of soundness — and the score is a DeepSeek (LLM) self-review, not external validation. Stop saying 'these are clickable; check them' as if a self-grade is third-party evidence.",
+    "Convert present-tense overclaims about the lab/moat ('keeps, structures, compounds', 'deepens every day', 'full provenance') to honest limited/future tense — the note currently contradicts its own doctrine of labeling honestly by describing unbuilt capability as running.",
+    "Cut the triadic cadence and the circular closing line; state the non-technical-founder point as a bet you're making, not a settled truth ('they are wrong to treat it as a weakness' → 'here is why I'm betting it isn't')."
+  ],
+  "_meta": {
+    "reviewer": "Claude (Opus 4)",
+    "date": "2026-08-05",
+    "method": "manual paste, founder ran audit in Claude UI",
+    "fixes_applied_in_PR": 16,
+    "fix_status": {
+      "archetypal_vignettes": "replaced with real operating picture (textbook run, 7+ email-server contracts, transport acquisition by asset+tech merge)",
+      "real_clients_real_revenue": "replaced with 'paying clients on multi-year contracts'",
+      "metrics_reframed": "yes — 'early hygiene not proof'; 'one LLM grading another LLM' disclosed",
+      "present_tense_overclaim": "converted to honest future/limited tense ('being built to keep'; 'does not exist yet')",
+      "triadic_closing_line": "cut; replaced with honest bet framing",
+      "weakness_as_strength_judo": "changed to 'I am betting it is not a weakness'"
+    }
+  }
+}
