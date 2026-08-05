@@ -130,9 +130,10 @@ class TestStubsRaise:
         with pytest.raises(NotImplementedError, match="selector"):
             select_clips(Brief(tour_slug="t"), {}, {}, [])
 
-    def test_render_video_raises(self):
+    def test_render_video_empty_edl_raises(self):
+        """render_video is now implemented; an empty EDL raises ValueError."""
         from videogen.edl import EDL
-        with pytest.raises(NotImplementedError, match="EDL-driven"):
+        with pytest.raises(ValueError, match="empty"):
             render_video(EDL(tour="t", total_duration_sec=0, edl=[]), Path("/tmp"))
 
     def test_run_qa_raises(self):

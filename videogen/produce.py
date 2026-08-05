@@ -361,26 +361,18 @@ def render_video(
     work_dir: Path,
     audio_path: Optional[str] = None,
 ) -> RenderResult:
-    """STUB: render the EDL into a final video file.
+    """Render the EDL into a final video file.
+
+    Calls videogen/render.py::render_video() — the EDL-driven renderer.
+    Three phases: extract segments → concat → mux audio.
+    Produces a BASE video (no branding overlays; those are a separate finish step).
 
     Contract:
       Input:  EDL (validated) + work_dir + optional mixed audio path
       Output: RenderResult (video_path, duration, codec, resolution)
-      Filled by: an EDL-driven compose renderer. The current compose.py is
-                 frame-based (compose_reel) and drops audio. Needs a new
-                 render function that:
-                 1. Extracts each shot's clip_start→clip_end from source_path
-                 2. Concatenates per timeline positions
-                 3. Overlays VO segments + music (mixed audio)
-                 4. Burns subtitles + logo + end card in a single pass
-                    (composite.composite_all from tour-video-finish)
     """
-    raise NotImplementedError(
-        "render_video() not yet built. Needs an EDL-driven renderer that "
-        "replaces the frame-based compose_reel(). The single-pass overlay "
-        "renderer exists at .agents/skills/tour-video-finish/scripts/composite.py "
-        "but isn't packaged into videogen/. This is the biggest remaining build."
-    )
+    from .render import render_video as _render
+    return _render(edl, work_dir, audio_path=audio_path)
 
 
 # --- stage 10: QA (STUB — H5) -----------------------------------------------
