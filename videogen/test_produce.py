@@ -126,9 +126,31 @@ class TestStubsRaise:
         with pytest.raises(NotImplementedError, match="H2"):
             ingest_brief(Brief(tour_slug="t"))
 
-    def test_select_clips_raises(self):
-        with pytest.raises(NotImplementedError, match="selector"):
-            select_clips(Brief(tour_slug="t"), {}, {}, [])
+    def test_select_clips_runs_and_returns_assignments(self):
+        """select_clips is filled — it returns typed ClipAssignments with
+        Golden-Rule provenance, one per VO segment."""
+        from videogen.timeline import VOSegment
+        brief = Brief(tour_slug="t", clip_hints=[
+            {"scene": "hook", "prompt": "dawn landscape", "duration_sec": 5},
+        ])
+        pool = {"shots": [{"shot_id": "shot1", "candidates": [
+            {"candidate_id": "pexels_1", "source_type": "stock:pexels",
+             "license": "Pexels License", "local_path": "pool/shot1/pexels_1.mp4",
+             "duration_sec": 20.0, "keywords_matched": ["dawn"]},
+        ]}]}
+        tags = {"pexels_1": {"tags": {
+            "shot_type": "landscape", "time_of_day": "dawn",
+            "commercial_grade": "broadcast", "mood": "epic",
+        }}}
+        vos = [VOSegment(shot_id="shot1", text="x", mp3_path="vo/shot1.mp3",
+                         duration_sec=5.0)]
+        # Inject a stub measurer so no real video file is read.
+        out = select_clips(brief, pool, tags, vos,
+                           measure_fn=lambda c: {"motion_score": 3.0, "brightness": 120})
+        assert len(out) == 1
+        assert out[0].shot_id == "shot1"
+        assert out[0].provenance.source == "pexels"
+        assert out[0].provenance.licence == "Pexels"
 
     def test_render_video_empty_edl_raises(self):
         """render_video is now implemented; an empty EDL raises ValueError."""

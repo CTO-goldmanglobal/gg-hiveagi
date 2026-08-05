@@ -19,9 +19,10 @@ STUB CONTRACTS (4 stages to fill):
   - ingest_brief():  brief_path → Brief with keywords + script generated from URL
     Filled by: H2 (new videogen/ingest.py, URL→brief converter)
   - select_clips():  Brief + pool manifest → list[ClipAssignment]
-    Filled by: a new pool→clip selector (not yet designed)
+    FILLED → videogen/clip_selector.py (relevance + quality scoring,
+               minus-method disqualify, Golden-Rule provenance translation).
   - render_video():  EDL + clips + audio → RenderResult (the actual MP4)
-    Filled by: an EDL-driven compose renderer (rewriting compose.py)
+    FILLED → videogen/render.py (EDL-driven renderer: extract → concat → mux).
   - run_qa():        ProduceResult + EDL → QAResult (deterministic + model QA)
     Filled by: H5 (videogen/qa_gate.py)
 """
@@ -255,23 +256,29 @@ def select_clips(
     pool: Dict[str, Any],
     tags: Dict[str, Any],
     vo_segments: List[VOSegment],
+    measure_fn: Optional[Any] = None,
 ) -> List[ClipAssignment]:
-    """STUB: select which candidate fills each shot.
+    """Select the best candidate per shot from the tagged pool.
+
+    Delegates to videogen.clip_selector.select_clips — the pool→clip selector
+    that scores candidates by tag relevance (vs the brief's clip_hints) + measured
+    quality, applies the minus-method hard filter (amateur/personal, low-motion),
+    and emits one ClipAssignment per VO segment with Golden-Rule Provenance.
 
     Contract:
       Input:  Brief + pool manifest + tags + VO segments (one per shot)
       Output: list[ClipAssignment] — one per shot, with source_path + provenance
-      Filled by: a new pool→clip selector. The old select.py is frame-based
-                 (rank_frames) and doesn't operate on pool candidates.
+
+    measure_fn is forwarded to the selector when provided (tests inject a stub
+    so no real video file is read); real mode leaves it None to use the default
+    on-disk measurer.
 
     In mock mode: produce() calls _mock_clip_assignments() directly.
     """
-    raise NotImplementedError(
-        "select_clips() not yet built. Needs a selector that picks the best "
-        "candidate per shot from the tagged pool, respecting brief constraints. "
-        "The old videogen/select.py:rank_frames() is frame-based and doesn't "
-        "fit. In mock mode, produce() uses synthetic assignments."
-    )
+    from .clip_selector import select_clips as _select
+    if measure_fn is not None:
+        return _select(brief, pool, tags, vo_segments, measure_fn=measure_fn)
+    return _select(brief, pool, tags, vo_segments)
 
 
 def _mock_clip_assignments(
