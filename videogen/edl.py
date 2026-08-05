@@ -133,7 +133,10 @@ def compute_total_duration(shots: List[Shot]) -> float:
 
     This accounts for crossfade overlaps. Summing durations would overcount
     by the total overlap, causing VO/footage desync (Circle F's 16-second bug).
+    Returns 0.0 for an empty shot list (an empty EDL has zero duration).
     """
+    if not shots:
+        return 0.0
     return max(s.timeline_start_sec + s.duration_sec for s in shots)
 
 

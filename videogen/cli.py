@@ -197,6 +197,29 @@ def cmd_finalize(args) -> int:
     return 0
 
 
+def cmd_produce(args) -> int:
+    """H4: one-command video production (brief → video)."""
+    from .produce import produce
+    result = produce(
+        brief_path=args.brief,
+        out_dir=args.out,
+        mock=args.mock,
+    )
+    print("═" * 60)
+    print(f"  Status:     {result.status}")
+    print(f"  Tour:       {result.tour_slug}")
+    print(f"  Duration:   {result.video.get('duration_sec', 0):.1f}s")
+    print(f"  QC:         {result.qc_report.get('decision', '?')}")
+    print(f"  Output:     {args.out}/")
+    print(f"    result.json  ({len(result.media_provenance)} provenance entries)")
+    print(f"    edl.json")
+    if args.mock:
+        print("  ⚠️  Mock mode — no real video rendered.")
+        print("      result.json + edl.json are valid for integration testing.")
+    print("═" * 60)
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="videogen",
@@ -235,6 +258,17 @@ def main(argv=None) -> int:
     p_final.add_argument("--run-id", default=None,
                          help="Override run_id (default: auto-generated)")
     p_final.set_defaults(func=cmd_finalize)
+
+    # produce subcommand — the one-command orchestrator (H4)
+    p_produce = sub.add_parser("produce",
+                               help="One-command video production (brief → video)")
+    p_produce.add_argument("--brief", default=None,
+                           help="Path to brief.yaml (canonical input). If omitted with --mock, uses a mock brief.")
+    p_produce.add_argument("--out", default="forge-output",
+                           help="Output directory for result.json + edl.json (default: forge-output)")
+    p_produce.add_argument("--mock", action="store_true",
+                           help="Mock mode: skip network + stubs, use synthetic data. Produces valid result.json + edl.json.")
+    p_produce.set_defaults(func=cmd_produce)
 
     args = parser.parse_args(argv)
 
