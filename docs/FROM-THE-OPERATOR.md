@@ -100,7 +100,13 @@ operator who builds only the commercial product never builds the thing that
 differentiates them. So the application runs *now*, in the open — not as a
 thesis, but as the operating group described above, with paying clients on
 multi-year contracts. The thesis is fed by everything the application
-teaches.
+teaches. There is an honest seam in this: the multi-year contracts live in
+the older verticals (printing, web), while the judgment data the thesis is
+specifically about (tour, clip, client preference) belongs to the travel
+venture that is only now launching. The bet — that an operator's
+cross-industry judgment generalizes to a new vertical — is exactly what the
+travel venture will validate or disprove. Until it does, the lab feeds on
+the pilot, not on years of travel data.
 
 **HiveAGI — the lab — exists because the application's real output is not
 video.** It is judgment data. A tour produced, a clip selected, a client
