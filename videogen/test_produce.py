@@ -122,9 +122,68 @@ class TestBriefLoading:
 class TestStubsRaise:
     """The four missing stages must raise with clear contract messages."""
 
-    def test_ingest_brief_raises(self):
-        with pytest.raises(NotImplementedError, match="H2"):
-            ingest_brief(Brief(tour_slug="t"))
+    def test_ingest_brief_runs_and_enriches(self):
+        """ingest_brief is filled (H2) — it enriches the brief with keywords +
+        grounded context. Fetch + LLM are injected so no network call is made."""
+        brief = Brief(
+            tour_slug="shanghai",
+            tour_url="https://example.com/tours/shanghai",
+            title="Shanghai",
+            clip_hints=[
+                {"scene": "hook", "prompt": "dawn skyline", "duration_sec": 5},
+                {"scene": "body", "prompt": "bund waterfront", "duration_sec": 5},
+            ],
+        )
+        # Inject stubs: a fake fetch returning minimal HTML, a fake LLM returning JSON.
+        fake_html = "<html><head><title>Shanghai Tour | ExploreChina</title></head><body><h1>Shanghai</h1>Day 1: The Bund, Yu Garden. Day 2: Pudong, Maglev.</body></html>"
+        fake_llm_response = '{"shot1": ["shanghai dawn skyline", "city sunrise"], "shot2": ["shanghai bund waterfront", "night skyline"]}'
+        out = ingest_brief(
+            brief,
+            url_fetch_fn=lambda url: fake_html,
+            llm_fn=lambda prompt: fake_llm_response,
+        )
+        # Title resolved from page
+        assert out.title == "Shanghai Tour"
+        # Keywords populated per shot
+        assert "shot1" in out.generated_keywords
+        assert "shot2" in out.generated_keywords
+        assert len(out.generated_keywords["shot1"]) >= 2
+        # Grounded context carries the itinerary text
+        assert "Bund" in out.grounded_context or "Day 1" in out.grounded_context
+        # Cities extracted
+        assert "Shanghai" in out.cities
+
+    def test_ingest_brief_degrades_when_fetch_fails(self):
+        """URL fetch failure → keywords fall back to hint prompt tokens."""
+        brief = Brief(
+            tour_slug="t",
+            tour_url="https://example.com/missing",
+            clip_hints=[{"scene": "hook", "prompt": "great wall dawn", "duration_sec": 5}],
+        )
+        out = ingest_brief(
+            brief,
+            url_fetch_fn=lambda url: "",  # fetch returns empty (failure)
+            llm_fn=lambda prompt: "",     # LLM also fails
+        )
+        # Fallback: hint prompt tokens become keywords
+        assert "shot1" in out.generated_keywords
+        assert any(tok in out.generated_keywords["shot1"][0] for tok in ("great", "wall", "dawn"))
+
+    def test_ingest_brief_degrades_when_llm_returns_garbage(self):
+        """LLM returning non-JSON → falls back to hint prompt tokens, no crash."""
+        brief = Brief(
+            tour_slug="t",
+            tour_url="https://example.com/x",
+            clip_hints=[{"scene": "hook", "prompt": "beijing forbidden city", "duration_sec": 5}],
+        )
+        out = ingest_brief(
+            brief,
+            url_fetch_fn=lambda url: "<html><title>Beijing</title>Day 1: Forbidden City</html>",
+            llm_fn=lambda prompt: "sorry I cannot help with that",  # garbage
+        )
+        # Fallback applies
+        assert "shot1" in out.generated_keywords
+        assert len(out.generated_keywords["shot1"]) > 0
 
     def test_select_clips_runs_and_returns_assignments(self):
         """select_clips is filled — it returns typed ClipAssignments with

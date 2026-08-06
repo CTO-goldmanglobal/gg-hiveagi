@@ -17,7 +17,7 @@ end-to-end immediately, with the stubs filled in subsequent PRs.
 
 STUB CONTRACTS (4 stages to fill):
   - ingest_brief():  brief_path → Brief with keywords + script generated from URL
-    Filled by: H2 (new videogen/ingest.py, URL→brief converter)
+    FILLED → videogen/ingest_brief.py (H2: URL→keywords, grounded in library_refs)
   - select_clips():  Brief + pool manifest → list[ClipAssignment]
     FILLED → videogen/clip_selector.py (relevance + quality scoring,
                minus-method disqualify, Golden-Rule provenance translation).
@@ -32,7 +32,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import yaml
 from pydantic import BaseModel
@@ -65,6 +65,12 @@ class Brief(BaseModel):
     library_refs: List[str] = []
     clip_hints: List[Dict[str, Any]] = []
     branding: Dict[str, Any] = {}
+    # Enriched by ingest_brief (H2). Empty when loaded from yaml; populated after the
+    # URL→brief enrichment stage so generate_script reads typed/serializable fields
+    # instead of untyped extras that model_dump() would drop.
+    generated_keywords: Dict[str, List[str]] = {}  # {shot_id: [pexels search phrases]}
+    grounded_context: str = ""                      # tour-page + library text for the script writer
+    cities: List[str] = []                          # resolved destination names
 
 
 class RenderResult(BaseModel):
@@ -134,23 +140,35 @@ def _mock_brief(tour_slug: str = "mock-tour") -> Brief:
 
 # --- stage 2: ingest (STUB — H2) --------------------------------------------
 
-def ingest_brief(brief: Brief) -> Brief:
-    """STUB: enrich the brief with keywords + script generated from the tour URL.
+def ingest_brief(
+    brief: Brief,
+    *,
+    url_fetch_fn: Optional[Callable[[str], str]] = None,
+    llm_fn: Optional[Callable[[str], Optional[str]]] = None,
+    llm_api_key: Optional[str] = None,
+) -> Brief:
+    """Enrich the brief with keywords + grounded context from the tour URL.
 
     Contract:
       Input:  Brief (with tour_url + library_refs + clip_hints)
-      Output: Brief (enriched with generated keywords + a draft script)
-      Filled by: H2 — new videogen/ingest.py (URL→brief converter)
-                 The current videogen/ingest.py is ffprobe; H2 renames it to
-                 probe.py and builds the real URL→brief ingest.
+      Output: Brief (enriched: title resolved, generated_keywords + grounded_context
+                     + cities populated for the downstream script writer)
 
-    In mock mode: returns the brief unchanged (clip_hints serve as keywords).
+    FILLED → videogen/ingest_brief.py (H2). Fetches the tour page, grounds in the
+    knowledge-library refs, synthesizes per-shot Pexels search keywords via MiniMax M3.
+    Fetch + LLM are injected so tests stay pure; real mode leaves them None.
+
+    Graceful degradation: URL fetch failure → library-only; LLM failure → hint prompts
+    as keywords (same as mock). Never raises on content failures.
+
+    In mock mode: produce() bypasses this stage entirely (_mock_brief is used).
     """
-    raise NotImplementedError(
-        "ingest_brief() not yet built — this is H2. "
-        "The current videogen/ingest.py is ffprobe frame-sampling, not a "
-        "URL→brief converter. H2 renames it to probe.py and builds the real "
-        "ingest. In mock mode, produce() bypasses this stage."
+    from .ingest_brief import enrich_brief
+    return enrich_brief(
+        brief,
+        url_fetch_fn=url_fetch_fn,
+        llm_fn=llm_fn,
+        llm_api_key=llm_api_key,
     )
 
 
@@ -474,7 +492,7 @@ def produce(
 
     # 2. Ingest (H2 stub — skipped in mock)
     if not mock:
-        brief = ingest_brief(brief)  # NotImplementedError until H2
+        brief = ingest_brief(brief)  # H2: URL→keywords, grounded in library_refs
 
     # 3. Fetch pool
     pool = fetch_pool_stage(brief, out_dir, mock=mock)
