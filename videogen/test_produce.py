@@ -19,6 +19,7 @@ from videogen.produce import (  # noqa: E402
     Brief,
     ProduceResult,
     ingest_brief,
+    generate_script,
     select_clips,
     render_video,
     run_qa,
@@ -210,6 +211,56 @@ class TestStubsRaise:
         assert out[0].shot_id == "shot1"
         assert out[0].provenance.source == "pexels"
         assert out[0].provenance.licence == "Pexels"
+
+    def test_generate_script_runs_and_returns_segments(self):
+        """generate_script is filled — returns [{shot_id, text}] per clip_hint."""
+        brief = Brief(
+            tour_slug="shanghai",
+            title="Shanghai",
+            duration_target_sec=30,
+            grounded_context="The Bund is a waterfront promenade in Shanghai.",
+            clip_hints=[
+                {"scene": "hook", "prompt": "dawn skyline", "duration_sec": 10},
+                {"scene": "body", "prompt": "bund waterfront", "duration_sec": 10},
+                {"scene": "cta", "prompt": "aerial view", "duration_sec": 10},
+            ],
+        )
+        fake_llm = json.dumps([
+            {"shot_id": "shot1", "text": "Shanghai wakes slowly, the river mist lifting off the Bund."},
+            {"shot_id": "shot2", "text": "For a century, this waterfront has watched the city reinvent itself."},
+            {"shot_id": "shot3", "text": "Walk it at dawn. Then explore our China tours."},
+        ])
+        out = generate_script(brief, {}, {}, llm_fn=lambda p: fake_llm)
+        assert len(out) == 3
+        assert out[0]["shot_id"] == "shot1"
+        assert "Bund" in out[1]["text"] or "waterfront" in out[1]["text"]
+
+    def test_generate_script_falls_back_for_missing_shots(self):
+        """If the LLM misses a shot, the hint prompt becomes the text."""
+        brief = Brief(
+            tour_slug="t",
+            clip_hints=[
+                {"scene": "a", "prompt": "great wall", "duration_sec": 5},
+                {"scene": "b", "prompt": "forbidden city", "duration_sec": 5},
+            ],
+        )
+        # LLM returns only shot1
+        out = generate_script(brief, {}, {},
+                              llm_fn=lambda p: json.dumps([{"shot_id": "shot1", "text": "The Great Wall."}]))
+        assert len(out) == 2
+        assert out[0]["text"] == "The Great Wall."
+        # shot2 fell back to its hint prompt
+        assert "forbidden" in out[1]["text"].lower()
+
+    def test_generate_script_degrades_on_llm_garbage(self):
+        """LLM returning non-JSON → all shots fall back to hint prompts, no crash."""
+        brief = Brief(
+            tour_slug="t",
+            clip_hints=[{"scene": "a", "prompt": "pandas in chengdu", "duration_sec": 5}],
+        )
+        out = generate_script(brief, {}, {}, llm_fn=lambda p: "I cannot help")
+        assert len(out) == 1
+        assert "pandas" in out[0]["text"].lower() or "chengdu" in out[0]["text"].lower()
 
     def test_render_video_empty_edl_raises(self):
         """render_video is now implemented; an empty EDL raises ValueError."""
