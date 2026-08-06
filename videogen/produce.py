@@ -24,7 +24,7 @@ STUB CONTRACTS (4 stages to fill):
   - render_video():  EDL + clips + audio → RenderResult (the actual MP4)
     FILLED → videogen/render.py (EDL-driven renderer: extract → concat → mux).
   - run_qa():        ProduceResult + EDL → QAResult (deterministic + model QA)
-    Filled by: H5 (videogen/qa_gate.py)
+    FILLED → videogen/qa_gate.py (H5: three-layer — deterministic > model > independent)
 """
 
 from __future__ import annotations
@@ -411,27 +411,33 @@ def render_video(
 
 # --- stage 10: QA (STUB — H5) -----------------------------------------------
 
-def run_qa(result: ProduceResult, edl: EDL) -> QAResult:
-    """STUB: run the three-layer QA gate.
+def run_qa(
+    result: ProduceResult,
+    edl: EDL,
+    *,
+    model_fn: Optional[Callable[[Any, Any], Dict[str, Any]]] = None,
+    skip_model: bool = False,
+    api_key: Optional[str] = None,
+) -> QAResult:
+    """Run the three-layer QA gate.
 
     Contract:
       Input:  ProduceResult (with video path) + EDL
       Output: QAResult (decision: PASS|FAIL|FIX, checks per layer)
-      Filled by: H5 — videogen/qa_gate.py.
 
-    Three layers (edl-schema.md §3):
-      1. Deterministic: duration, black-frame, silence, subtitle timing,
-         safe-area, provenance completeness.
-      2. Model-based (M3): visual relevance, synthetic defects, brand fit.
-      3. Independent sample: second model or human reviews a sample.
+    FILLED → videogen/qa_gate.py (H5). Implements edl-schema.md §3:
+      1. Deterministic: file readable, duration, black-frame, provenance completeness.
+      2. Model-based (M3): visual relevance, synthetic defects, audience fit, brand.
+      3. Independent sample: stubbed (informational only today).
 
-    Rule: a model score must NEVER override a deterministic provenance failure.
+    Keystone rule: a model score must NEVER override a deterministic provenance
+    failure. Layer 1 fail → FAIL, regardless of layer 2 scores.
+
+    model_fn is injected so tests stay pure; skip_model skips layer 2 for fast
+    deterministic-only checks.
     """
-    raise NotImplementedError(
-        "run_qa() not yet built — this is H5 (videogen/qa_gate.py). "
-        "Three-layer QA: deterministic > model-based > independent. "
-        "A model score must never override a deterministic provenance failure."
-    )
+    from .qa_gate import run_qa_gate
+    return run_qa_gate(result, edl, model_fn=model_fn, skip_model=skip_model, api_key=api_key)
 
 
 def _mock_qa(edl: EDL) -> QAResult:
@@ -555,7 +561,7 @@ def produce(
     if mock:
         qa = _mock_qa(edl)
     else:
-        qa = run_qa(result, edl)  # NotImplementedError until H5
+        qa = run_qa(result, edl)  # H5: three-layer QA gate
 
     result.qc_report = qa.model_dump()
 

@@ -268,10 +268,42 @@ class TestStubsRaise:
         with pytest.raises(ValueError, match="empty"):
             render_video(EDL(tour="t", total_duration_sec=0, edl=[]), Path("/tmp"))
 
-    def test_run_qa_raises(self):
+    def test_run_qa_deterministic_layer_runs(self):
+        """run_qa is filled (H5) — layer 1 runs without a model. Layer 1 fails on
+        a missing video file, proving the keystone rule is enforceable."""
         from videogen.edl import EDL
-        with pytest.raises(NotImplementedError, match="H5"):
-            run_qa(ProduceResult(tour_slug="t"), EDL(tour="t", total_duration_sec=0, edl=[]))
+        result = ProduceResult(
+            tour_slug="t",
+            video={"mp4_path": "/nonexistent/path.mp4"},  # missing → layer 1 fails
+        )
+        edl = EDL(tour="t", total_duration_sec=10.0, edl=[])
+        out = run_qa(result, edl, skip_model=True)
+        assert out.decision == "FAIL"  # missing file → layer 1 fail → FAIL regardless
+        assert any(c.name == "file_readable" and not c.passed for c in out.checks)
+
+    def test_run_qa_provenance_completeness_enforced(self, tmp_path):
+        """A shot missing provenance fails layer 1 — model score can't override."""
+        from videogen.edl import EDL, Shot, Provenance
+        # Create a tiny valid mp4 so file_readable passes, then force a provenance gap
+        import subprocess
+        video = tmp_path / "test.mp4"
+        try:
+            subprocess.check_output(
+                ["ffmpeg", "-f", "lavfi", "-i", "color=black:s=320x240:d=1",
+                 "-c:v", "libx264", "-y", str(video)],
+                stderr=subprocess.DEVNULL, timeout=30,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pytest.skip("ffmpeg not available")
+
+        shot_no_prov = Shot(shot_id="shot1", source_path=str(video),
+                            clip_start_sec=0, clip_end_sec=1, duration_sec=1,
+                            timeline_start_sec=0, provenance=None)
+        edl = EDL(tour="t", total_duration_sec=1.0, edl=[shot_no_prov])
+        result = ProduceResult(tour_slug="t", video={"mp4_path": str(video)})
+        out = run_qa(result, edl, skip_model=True)
+        assert out.decision == "FAIL"
+        assert any("provenance" in c.name and not c.passed for c in out.checks)
 
     def test_real_mode_raises_on_missing_brief(self):
         """Real mode without a brief should error, not silently mock."""
