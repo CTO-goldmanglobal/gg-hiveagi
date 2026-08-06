@@ -34,6 +34,8 @@ face) for portrait. This avoids re-sourcing weak portrait pools entirely.
 
 import json
 import subprocess
+import urllib  # explicit parent import — Python 3.14 needs this for urllib.X refs
+import urllib.request
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
@@ -90,7 +92,6 @@ def smart_crop_x(clip_path: Path, api_key: str,
     """
     import base64
     import cv2
-    import urllib.request
     from llm_wiki_engine.llm_json import extract_json
 
     # Extract middle frame

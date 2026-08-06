@@ -17,14 +17,14 @@ end-to-end immediately, with the stubs filled in subsequent PRs.
 
 STUB CONTRACTS (4 stages to fill):
   - ingest_brief():  brief_path → Brief with keywords + script generated from URL
-    Filled by: H2 (new videogen/ingest.py, URL→brief converter)
+    FILLED → videogen/ingest_brief.py (H2: URL→keywords, grounded in library_refs)
   - select_clips():  Brief + pool manifest → list[ClipAssignment]
     FILLED → videogen/clip_selector.py (relevance + quality scoring,
                minus-method disqualify, Golden-Rule provenance translation).
   - render_video():  EDL + clips + audio → RenderResult (the actual MP4)
     FILLED → videogen/render.py (EDL-driven renderer: extract → concat → mux).
   - run_qa():        ProduceResult + EDL → QAResult (deterministic + model QA)
-    Filled by: H5 (videogen/qa_gate.py)
+    FILLED → videogen/qa_gate.py (H5: three-layer — deterministic > model > independent)
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import yaml
 from pydantic import BaseModel
@@ -65,6 +65,12 @@ class Brief(BaseModel):
     library_refs: List[str] = []
     clip_hints: List[Dict[str, Any]] = []
     branding: Dict[str, Any] = {}
+    # Enriched by ingest_brief (H2). Empty when loaded from yaml; populated after the
+    # URL→brief enrichment stage so generate_script reads typed/serializable fields
+    # instead of untyped extras that model_dump() would drop.
+    generated_keywords: Dict[str, List[str]] = {}  # {shot_id: [pexels search phrases]}
+    grounded_context: str = ""                      # tour-page + library text for the script writer
+    cities: List[str] = []                          # resolved destination names
 
 
 class RenderResult(BaseModel):
@@ -134,23 +140,35 @@ def _mock_brief(tour_slug: str = "mock-tour") -> Brief:
 
 # --- stage 2: ingest (STUB — H2) --------------------------------------------
 
-def ingest_brief(brief: Brief) -> Brief:
-    """STUB: enrich the brief with keywords + script generated from the tour URL.
+def ingest_brief(
+    brief: Brief,
+    *,
+    url_fetch_fn: Optional[Callable[[str], str]] = None,
+    llm_fn: Optional[Callable[[str], Optional[str]]] = None,
+    llm_api_key: Optional[str] = None,
+) -> Brief:
+    """Enrich the brief with keywords + grounded context from the tour URL.
 
     Contract:
       Input:  Brief (with tour_url + library_refs + clip_hints)
-      Output: Brief (enriched with generated keywords + a draft script)
-      Filled by: H2 — new videogen/ingest.py (URL→brief converter)
-                 The current videogen/ingest.py is ffprobe; H2 renames it to
-                 probe.py and builds the real URL→brief ingest.
+      Output: Brief (enriched: title resolved, generated_keywords + grounded_context
+                     + cities populated for the downstream script writer)
 
-    In mock mode: returns the brief unchanged (clip_hints serve as keywords).
+    FILLED → videogen/ingest_brief.py (H2). Fetches the tour page, grounds in the
+    knowledge-library refs, synthesizes per-shot Pexels search keywords via MiniMax M3.
+    Fetch + LLM are injected so tests stay pure; real mode leaves them None.
+
+    Graceful degradation: URL fetch failure → library-only; LLM failure → hint prompts
+    as keywords (same as mock). Never raises on content failures.
+
+    In mock mode: produce() bypasses this stage entirely (_mock_brief is used).
     """
-    raise NotImplementedError(
-        "ingest_brief() not yet built — this is H2. "
-        "The current videogen/ingest.py is ffprobe frame-sampling, not a "
-        "URL→brief converter. H2 renames it to probe.py and builds the real "
-        "ingest. In mock mode, produce() bypasses this stage."
+    from .ingest_brief import enrich_brief
+    return enrich_brief(
+        brief,
+        url_fetch_fn=url_fetch_fn,
+        llm_fn=llm_fn,
+        llm_api_key=llm_api_key,
     )
 
 
@@ -159,19 +177,57 @@ def ingest_brief(brief: Brief) -> Brief:
 def fetch_pool_stage(brief: Brief, work_dir: Path, mock: bool = False) -> Dict[str, Any]:
     """Fetch Pexels candidates per shot.
 
-    Real mode: calls clip_pool.fetch.fetch_pool() (fully implemented).
-    Mock mode: returns a synthetic pool manifest.
+    Real mode: builds a keywords config from brief.generated_keywords (populated by
+    H2 ingest_brief) or brief.clip_hints (fallback), writes it to work_dir, and calls
+    clip_pool.fetch.fetch_pool(). Mock mode: returns a synthetic pool manifest.
     """
     if mock:
         return _mock_pool_manifest(brief)
     from .clip_pool.fetch import fetch_pool
-    # Build a keywords config from the brief's clip_hints
-    # (H2 will formalize this mapping)
-    raise NotImplementedError(
-        "Real fetch_pool_stage needs a keywords.yaml built from brief.clip_hints. "
-        "This wiring is part of H2. Use --mock for now, or call "
-        "clip_pool.fetch.fetch_pool() directly with a keywords config."
-    )
+
+    # Build the keywords config from the brief's generated keywords (H2) or clip_hints.
+    # fetch_pool reads a keywords.yaml — we synthesize it in-memory + write to work_dir.
+    shots_cfg = []
+    for i, hint in enumerate(brief.clip_hints):
+        shot_id = f"shot{i+1}"
+        # Prefer generated_keywords from H2; fall back to the hint prompt tokens
+        kws = brief.generated_keywords.get(shot_id) or []
+        if not kws:
+            # Fallback: tokenize the hint prompt (same logic as ingest_brief fallback)
+            import re
+            prompt = str(hint.get("prompt", ""))
+            kws = [t for t in re.findall(r"[a-z0-9]+", prompt.lower()) if len(t) >= 3][:5]
+        if not kws:
+            kws = [brief.tour_slug.replace("-", " ")]  # last-resort generic
+        shots_cfg.append({
+            "id": shot_id,
+            "label": str(hint.get("scene", shot_id)),
+            "keywords": kws,
+        })
+
+    config = {
+        "tour": brief.tour_slug,
+        "source_type": "stock:pexels",
+        "candidates_per_keyword": 4,
+        "orientations": brief.aspect_ratios if brief.aspect_ratios else ["landscape", "portrait"],
+        "shots": shots_cfg,
+    }
+
+    # Write the config so fetch_pool can read it (it takes a path, not a dict)
+    config_path = work_dir / "keywords.yaml"
+    work_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        import yaml
+        config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    except ImportError:
+        # No PyYAML — write JSON instead (fetch_pool's load_keyword_config uses yaml,
+        # but we can bypass it by calling the lower-level search function directly
+        # if needed. For now, require PyYAML — it's already a HiveAGI dep.)
+        raise RuntimeError("PyYAML required for real-mode fetch_pool_stage. pip install pyyaml")
+
+    pool_dir = work_dir / "pool"
+    logger.info("fetch_pool_stage: fetching %d shots → %s", len(shots_cfg), pool_dir)
+    return fetch_pool(config_path, pool_dir)
 
 
 def _mock_pool_manifest(brief: Brief) -> Dict[str, Any]:
@@ -223,22 +279,31 @@ def _mock_tags(pool: Dict[str, Any]) -> Dict[str, Any]:
 
 # --- stage 5: generate script (STUB — needs selector) -----------------------
 
-def generate_script(brief: Brief, pool: Dict[str, Any], tags: Dict[str, Any]) -> List[Dict[str, str]]:
+def generate_script(
+    brief: Brief,
+    pool: Dict[str, Any],
+    tags: Dict[str, Any],
+    *,
+    llm_fn: Optional[Callable[[str], Optional[str]]] = None,
+    llm_api_key: Optional[str] = None,
+) -> List[Dict[str, str]]:
     """Generate a narration script from the brief + tagged pool.
 
     Contract:
-      Input:  Brief + pool manifest + tags dict
-      Output: [{shot_id, text}, ...] — one entry per shot
-      Filled by: a new script generator (pool→narration).
+      Input:  Brief (enriched with grounded_context from H2) + pool manifest + tags
+      Output: [{shot_id, text}, ...] — one entry per clip_hint, in order
+
+    FILLED → videogen/script_writer.py. The script is GROUNDED in brief.grounded_context
+    so narration uses real tour content (Golden Rule: no invented facts). Shot count is
+    fixed by brief.clip_hints; the LLM cannot add/remove shots. Each segment's text →
+    TTS → measured duration → shot duration (VO drives the cut).
+
+    llm_fn is injected so tests stay pure; real mode leaves it None.
 
     In mock mode: produce() calls _mock_script() directly.
     """
-    raise NotImplementedError(
-        "generate_script() not yet built. Needs an LLM-driven narration writer "
-        "that reads the tagged pool + brief and produces per-shot VO text. "
-        "The old select.py:write_script() is frame-based and doesn't fit the "
-        "clip-pool paradigm. In mock mode, produce() uses a synthetic script."
-    )
+    from .script_writer import write_script
+    return write_script(brief, pool, tags, llm_fn=llm_fn, llm_api_key=llm_api_key)
 
 
 def _mock_script(brief: Brief) -> List[Dict[str, str]]:
@@ -384,27 +449,33 @@ def render_video(
 
 # --- stage 10: QA (STUB — H5) -----------------------------------------------
 
-def run_qa(result: ProduceResult, edl: EDL) -> QAResult:
-    """STUB: run the three-layer QA gate.
+def run_qa(
+    result: ProduceResult,
+    edl: EDL,
+    *,
+    model_fn: Optional[Callable[[Any, Any], Dict[str, Any]]] = None,
+    skip_model: bool = False,
+    api_key: Optional[str] = None,
+) -> QAResult:
+    """Run the three-layer QA gate.
 
     Contract:
       Input:  ProduceResult (with video path) + EDL
       Output: QAResult (decision: PASS|FAIL|FIX, checks per layer)
-      Filled by: H5 — videogen/qa_gate.py.
 
-    Three layers (edl-schema.md §3):
-      1. Deterministic: duration, black-frame, silence, subtitle timing,
-         safe-area, provenance completeness.
-      2. Model-based (M3): visual relevance, synthetic defects, brand fit.
-      3. Independent sample: second model or human reviews a sample.
+    FILLED → videogen/qa_gate.py (H5). Implements edl-schema.md §3:
+      1. Deterministic: file readable, duration, black-frame, provenance completeness.
+      2. Model-based (M3): visual relevance, synthetic defects, audience fit, brand.
+      3. Independent sample: stubbed (informational only today).
 
-    Rule: a model score must NEVER override a deterministic provenance failure.
+    Keystone rule: a model score must NEVER override a deterministic provenance
+    failure. Layer 1 fail → FAIL, regardless of layer 2 scores.
+
+    model_fn is injected so tests stay pure; skip_model skips layer 2 for fast
+    deterministic-only checks.
     """
-    raise NotImplementedError(
-        "run_qa() not yet built — this is H5 (videogen/qa_gate.py). "
-        "Three-layer QA: deterministic > model-based > independent. "
-        "A model score must never override a deterministic provenance failure."
-    )
+    from .qa_gate import run_qa_gate
+    return run_qa_gate(result, edl, model_fn=model_fn, skip_model=skip_model, api_key=api_key)
 
 
 def _mock_qa(edl: EDL) -> QAResult:
@@ -447,6 +518,7 @@ def produce(
     brief_path: Optional[Path | str] = None,
     out_dir: Path | str = "forge-output",
     mock: bool = False,
+    simple: bool = False,
 ) -> ProduceResult:
     """Run the full video production pipeline.
 
@@ -455,6 +527,10 @@ def produce(
         out_dir: output directory for result.json + edl.json.
         mock: if True, skip all network calls and stubs; use synthetic data.
               Produces valid result.json + edl.json for integration testing.
+        simple: if True (real mode only), use the fast production path: fetch 2-3
+              clips per shot, pick best by motion (no vision tagging, no judging).
+              The "make a video" tool vs the full research pipeline. Clips are
+              disposable — downloaded, used, extras deleted.
 
     Returns:
         ProduceResult — also written to out_dir/result.json.
@@ -472,30 +548,42 @@ def produce(
     else:
         raise ValueError("brief_path is required in real mode (or use mock=True)")
 
-    # 2. Ingest (H2 stub — skipped in mock)
+    # 2. Ingest (H2 — enriches brief with grounded keywords + context)
     if not mock:
-        brief = ingest_brief(brief)  # NotImplementedError until H2
+        brief = ingest_brief(brief)  # H2: URL→keywords, grounded in library_refs
 
-    # 3. Fetch pool
-    pool = fetch_pool_stage(brief, out_dir, mock=mock)
-
-    # 4. Tag pool
-    tags = tag_pool_stage(pool, out_dir, mock=mock)
-
-    # 5. Generate script
-    if mock:
-        script = _mock_script(brief)
+    # 3-7. Clip acquisition: simple mode skips the full research pipeline.
+    if simple and not mock:
+        # PRODUCTION PATH: fetch few, pick by motion, no tagging, no judging.
+        # Clips are disposable — download, use, delete extras.
+        from .simple_fetch import simple_fetch
+        logger.info("produce() simple mode: fetching clips (no tagging/judging)")
+        clip_assignments = simple_fetch(brief, out_dir)
+        # Script still needs generating (grounded narration)
+        script = generate_script(brief, {}, {})  # empty pool/tags — script uses brief context
+        vo_segments = tts_stage(script, out_dir, brief, mock=False)
     else:
-        script = generate_script(brief, pool, tags)  # NotImplementedError until built
+        # FULL/RESEARCH PATH (or mock): fetch pool → tag → script → select
+        # 3. Fetch pool
+        pool = fetch_pool_stage(brief, out_dir, mock=mock)
 
-    # 6. TTS
-    vo_segments = tts_stage(script, out_dir, brief, mock=mock)
+        # 4. Tag pool
+        tags = tag_pool_stage(pool, out_dir, mock=mock)
 
-    # 7. Select clips
-    if mock:
-        clip_assignments = _mock_clip_assignments(pool, vo_segments)
-    else:
-        clip_assignments = select_clips(brief, pool, tags, vo_segments)  # stub
+        # 5. Generate script
+        if mock:
+            script = _mock_script(brief)
+        else:
+            script = generate_script(brief, pool, tags)  # script_writer — grounded narration
+
+        # 6. TTS
+        vo_segments = tts_stage(script, out_dir, brief, mock=mock)
+
+        # 7. Select clips
+        if mock:
+            clip_assignments = _mock_clip_assignments(pool, vo_segments)
+        else:
+            clip_assignments = select_clips(brief, pool, tags, vo_segments)
 
     # 8. Build timeline (H3 — pure, always works)
     edl = build_timeline_stage(vo_segments, clip_assignments, brief)
@@ -527,7 +615,7 @@ def produce(
     if mock:
         qa = _mock_qa(edl)
     else:
-        qa = run_qa(result, edl)  # NotImplementedError until H5
+        qa = run_qa(result, edl)  # H5: three-layer QA gate
 
     result.qc_report = qa.model_dump()
 

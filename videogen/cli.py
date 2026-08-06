@@ -204,6 +204,7 @@ def cmd_produce(args) -> int:
         brief_path=args.brief,
         out_dir=args.out,
         mock=args.mock,
+        simple=args.simple,
     )
     print("═" * 60)
     print(f"  Status:     {result.status}")
@@ -268,6 +269,8 @@ def main(argv=None) -> int:
                            help="Output directory for result.json + edl.json (default: forge-output)")
     p_produce.add_argument("--mock", action="store_true",
                            help="Mock mode: skip network + stubs, use synthetic data. Produces valid result.json + edl.json.")
+    p_produce.add_argument("--simple", action="store_true",
+                           help="Production mode: fetch few clips, pick by motion (no vision tagging). The fast 'make a video' path.")
     p_produce.set_defaults(func=cmd_produce)
 
     args = parser.parse_args(argv)
