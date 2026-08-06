@@ -518,6 +518,7 @@ def produce(
     brief_path: Optional[Path | str] = None,
     out_dir: Path | str = "forge-output",
     mock: bool = False,
+    simple: bool = False,
 ) -> ProduceResult:
     """Run the full video production pipeline.
 
@@ -526,6 +527,10 @@ def produce(
         out_dir: output directory for result.json + edl.json.
         mock: if True, skip all network calls and stubs; use synthetic data.
               Produces valid result.json + edl.json for integration testing.
+        simple: if True (real mode only), use the fast production path: fetch 2-3
+              clips per shot, pick best by motion (no vision tagging, no judging).
+              The "make a video" tool vs the full research pipeline. Clips are
+              disposable — downloaded, used, extras deleted.
 
     Returns:
         ProduceResult — also written to out_dir/result.json.
@@ -543,31 +548,42 @@ def produce(
     else:
         raise ValueError("brief_path is required in real mode (or use mock=True)")
 
-    # 2. Ingest (H2 stub — skipped in mock)
+    # 2. Ingest (H2 — enriches brief with grounded keywords + context)
     if not mock:
         brief = ingest_brief(brief)  # H2: URL→keywords, grounded in library_refs
 
-    # 3. Fetch pool
-    pool = fetch_pool_stage(brief, out_dir, mock=mock)
-
-    # 4. Tag pool
-    tags = tag_pool_stage(pool, out_dir, mock=mock)
-
-    # 5. Generate script
-    # 6. Generate script (real mode) or use mock
-    if mock:
-        script = _mock_script(brief)
+    # 3-7. Clip acquisition: simple mode skips the full research pipeline.
+    if simple and not mock:
+        # PRODUCTION PATH: fetch few, pick by motion, no tagging, no judging.
+        # Clips are disposable — download, use, delete extras.
+        from .simple_fetch import simple_fetch
+        logger.info("produce() simple mode: fetching clips (no tagging/judging)")
+        clip_assignments = simple_fetch(brief, out_dir)
+        # Script still needs generating (grounded narration)
+        script = generate_script(brief, {}, {})  # empty pool/tags — script uses brief context
+        vo_segments = tts_stage(script, out_dir, brief, mock=False)
     else:
-        script = generate_script(brief, pool, tags)  # script_writer — grounded narration
+        # FULL/RESEARCH PATH (or mock): fetch pool → tag → script → select
+        # 3. Fetch pool
+        pool = fetch_pool_stage(brief, out_dir, mock=mock)
 
-    # 6. TTS
-    vo_segments = tts_stage(script, out_dir, brief, mock=mock)
+        # 4. Tag pool
+        tags = tag_pool_stage(pool, out_dir, mock=mock)
 
-    # 7. Select clips
-    if mock:
-        clip_assignments = _mock_clip_assignments(pool, vo_segments)
-    else:
-        clip_assignments = select_clips(brief, pool, tags, vo_segments)  # stub
+        # 5. Generate script
+        if mock:
+            script = _mock_script(brief)
+        else:
+            script = generate_script(brief, pool, tags)  # script_writer — grounded narration
+
+        # 6. TTS
+        vo_segments = tts_stage(script, out_dir, brief, mock=mock)
+
+        # 7. Select clips
+        if mock:
+            clip_assignments = _mock_clip_assignments(pool, vo_segments)
+        else:
+            clip_assignments = select_clips(brief, pool, tags, vo_segments)
 
     # 8. Build timeline (H3 — pure, always works)
     edl = build_timeline_stage(vo_segments, clip_assignments, brief)

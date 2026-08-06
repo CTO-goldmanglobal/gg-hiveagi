@@ -30,6 +30,8 @@ import json
 import logging
 import os
 import subprocess
+import urllib  # explicit parent import — Python 3.14 needs this for urllib.X refs
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -69,7 +71,7 @@ class ClipAssignment(BaseModel):
 
 # --- TTS (network) -----------------------------------------------------------
 
-MINIMAX_TTS_URL = "https://api.minimax.chat/v1/t2a_v2"
+MINIMAX_TTS_URL = "https://api.minimax.io/v1/t2a_v2"
 DEFAULT_VOICE_ID = "English_expressive_narrator"
 DEFAULT_SPEED = 0.9
 
@@ -99,8 +101,17 @@ def _tts_segment(
     payload = json.dumps({
         "model": "speech-2.8-hd",
         "text": text,
-        "voice_setting": {"voice_id": voice_id, "speed": speed},
-        "audio_setting": {"format": "mp3", "sample_rate": 32000},
+        "voice_setting": {
+            "voice_id": voice_id,
+            "speed": speed,
+            "vol": 1.0,
+            "pitch": 0,
+        },
+        "audio_setting": {
+            "sample_rate": 32000,
+            "bitrate": 128000,
+            "format": "mp3",
+        },
     }).encode("utf-8")
     req = urllib.request.Request(
         MINIMAX_TTS_URL,
@@ -109,17 +120,28 @@ def _tts_segment(
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         },
+        method="POST",
     )
     try:
-        import urllib.error
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         audio_hex = data.get("data", {}).get("audio", "")
-        if not audio_hex:
-            logger.error("TTS returned no audio for: %s", text[:50])
-            return False
-        out_path.write_bytes(bytes.fromhex(audio_hex))
-        return True
+        if audio_hex:
+            out_path.write_bytes(bytes.fromhex(audio_hex))
+            return True
+        # Some MiniMax responses use base64 in data.audio instead of hex
+        import base64
+        audio_b64 = data.get("data", {}).get("audio", "")
+        if audio_b64:
+            try:
+                out_path.write_bytes(base64.b64decode(audio_b64))
+                return True
+            except Exception:
+                pass
+        # Log the full response for debugging when no audio is found
+        logger.error("TTS returned no audio for: %s — response: %s",
+                     text[:50], json.dumps(data)[:200])
+        return False
     except Exception as e:
         logger.error("TTS failed for segment: %s", e)
         return False
