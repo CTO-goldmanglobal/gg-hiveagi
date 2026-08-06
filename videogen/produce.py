@@ -177,19 +177,57 @@ def ingest_brief(
 def fetch_pool_stage(brief: Brief, work_dir: Path, mock: bool = False) -> Dict[str, Any]:
     """Fetch Pexels candidates per shot.
 
-    Real mode: calls clip_pool.fetch.fetch_pool() (fully implemented).
-    Mock mode: returns a synthetic pool manifest.
+    Real mode: builds a keywords config from brief.generated_keywords (populated by
+    H2 ingest_brief) or brief.clip_hints (fallback), writes it to work_dir, and calls
+    clip_pool.fetch.fetch_pool(). Mock mode: returns a synthetic pool manifest.
     """
     if mock:
         return _mock_pool_manifest(brief)
     from .clip_pool.fetch import fetch_pool
-    # Build a keywords config from the brief's clip_hints
-    # (H2 will formalize this mapping)
-    raise NotImplementedError(
-        "Real fetch_pool_stage needs a keywords.yaml built from brief.clip_hints. "
-        "This wiring is part of H2. Use --mock for now, or call "
-        "clip_pool.fetch.fetch_pool() directly with a keywords config."
-    )
+
+    # Build the keywords config from the brief's generated keywords (H2) or clip_hints.
+    # fetch_pool reads a keywords.yaml — we synthesize it in-memory + write to work_dir.
+    shots_cfg = []
+    for i, hint in enumerate(brief.clip_hints):
+        shot_id = f"shot{i+1}"
+        # Prefer generated_keywords from H2; fall back to the hint prompt tokens
+        kws = brief.generated_keywords.get(shot_id) or []
+        if not kws:
+            # Fallback: tokenize the hint prompt (same logic as ingest_brief fallback)
+            import re
+            prompt = str(hint.get("prompt", ""))
+            kws = [t for t in re.findall(r"[a-z0-9]+", prompt.lower()) if len(t) >= 3][:5]
+        if not kws:
+            kws = [brief.tour_slug.replace("-", " ")]  # last-resort generic
+        shots_cfg.append({
+            "id": shot_id,
+            "label": str(hint.get("scene", shot_id)),
+            "keywords": kws,
+        })
+
+    config = {
+        "tour": brief.tour_slug,
+        "source_type": "stock:pexels",
+        "candidates_per_keyword": 4,
+        "orientations": brief.aspect_ratios if brief.aspect_ratios else ["landscape", "portrait"],
+        "shots": shots_cfg,
+    }
+
+    # Write the config so fetch_pool can read it (it takes a path, not a dict)
+    config_path = work_dir / "keywords.yaml"
+    work_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        import yaml
+        config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    except ImportError:
+        # No PyYAML — write JSON instead (fetch_pool's load_keyword_config uses yaml,
+        # but we can bypass it by calling the lower-level search function directly
+        # if needed. For now, require PyYAML — it's already a HiveAGI dep.)
+        raise RuntimeError("PyYAML required for real-mode fetch_pool_stage. pip install pyyaml")
+
+    pool_dir = work_dir / "pool"
+    logger.info("fetch_pool_stage: fetching %d shots → %s", len(shots_cfg), pool_dir)
+    return fetch_pool(config_path, pool_dir)
 
 
 def _mock_pool_manifest(brief: Brief) -> Dict[str, Any]:
