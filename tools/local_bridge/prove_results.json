@@ -1,0 +1,65 @@
+{
+  "model": "qwen3.6:27b",
+  "completed": 1,
+  "total": 2,
+  "results": [
+    {
+      "task": "2_edl_duration",
+      "ground_truth_ids": [
+        "closed_form_not_positional",
+        "ignores_empty_case"
+      ],
+      "blind": {
+        "score": {
+          "caught_ids": [
+            "closed_form_not_positional"
+          ],
+          "caught_count": 1,
+          "total_ground_truth": 2,
+          "recall": 0.5
+        },
+        "defects": [
+          {
+            "checklist_item": "Uses a direct arithmetic formula (e.g., sum(shot_durations) - sum(transition_overlaps)) instead of explicitly tracking shot start/end positions on a timeline.",
+            "defect": "The implementation calculates the result using `sum(shot_durations) - sum(transition_overlaps)`, which is a closed-form shortcut. It completely bypasses the required sequential position tracking (initializing t=0, computing each shot's start/end times, and applying overlaps step-by-step).",
+            "severity": "critical"
+          }
+        ],
+        "raw_review_head": "```json\n{\n  \"defects\": [\n    {\n      \"checklist_item\": \"Uses a direct arithmetic formula (e.g., sum(shot_durations) - sum(transition_overlaps)) instead of explicitly tracking shot start/end positions on a timeline.\",\n      \"defect\": \"The implementation calculates the result using `sum(shot_durations) - sum(transition_overlaps)`, which is a closed-form shortcut. It completely bypasses the required ",
+        "error": null
+      },
+      "self": {
+        "score": {
+          "caught_ids": [
+            "closed_form_not_positional"
+          ],
+          "caught_count": 1,
+          "total_ground_truth": 2,
+          "recall": 0.5
+        },
+        "defects": [
+          {
+            "defect": "Violates explicit implementation constraint: The prompt explicitly requires deriving the result from timeline positions, not a closed-form sum. The solution uses `sum(shot_durations) - sum(transition_overlaps)`, directly contradicting this architectural requirement.",
+            "severity": "critical"
+          },
+          {
+            "defect": "Masks invalid overlap scenarios: If an overlap exceeds the duration of the preceding shot, the next shot's start time becomes negative. A position-based simulation would naturally expose this (start_time < 0), but the closed-form sum silently produces a mathematically valid but physically impossible timeline result.",
+            "severity": "high"
+          },
+          {
+            "defect": "Ignores floating-point accumulation differences: Iterative position updates (add duration, subtract overlap) accumulate rounding errors differently than bulk `sum()` calls. In professional video editing contexts requiring frame-accurate timing, this discrepancy can cause off-by-one-frame drift over long timelines.",
+            "severity": "medium"
+          },
+          {
+            "defect": "Lacks implicit input validation during iteration: A position-based loop naturally enforces that `len(transition_overlaps) == len(shot_durations) - 1` through index alignment. The closed-form approach computes totals independently, potentially masking mismatched list lengths or producing misleading results without clear failure context.",
+            "severity": "low"
+          }
+        ],
+        "raw_review_head": "```json\n{\n  \"defects\": [\n    {\n      \"defect\": \"Violates explicit implementation constraint: The prompt explicitly requires deriving the result from timeline positions, not a closed-form sum. The solution uses `sum(shot_durations) - sum(transition_overlaps)`, directly contradicting this architectural requirement.\",\n      \"severity\": \"critical\"\n    },\n    {\n      \"defect\": \"Masks invalid overlap sc",
+        "error": null
+      },
+      "only_blind_caught": [],
+      "blind_wins": false
+    }
+  ]
+}

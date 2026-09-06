@@ -31,6 +31,8 @@ from __future__ import annotations
 
 import json
 import logging
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -595,16 +597,76 @@ def produce(
     write_edl(edl, out_dir / "edl.json")
     logger.info("EDL written + validated: %d shots, %.1fs", len(edl.edl), edl.total_duration_sec)
 
-    # 10. Render (stub — skipped in mock)
+    # 10. Render (the silent draft — clips concatenated + VO muxed)
     if mock:
         render = RenderResult(
             video_path=str(out_dir / "mock_video.mp4"),
             duration_sec=edl.total_duration_sec,
         )
     else:
-        render = render_video(edl, out_dir)  # NotImplementedError until built
+        render = render_video(edl, out_dir)
 
-    # 11. QA (H5 stub — mock passes)
+    # 10b. FINISH — subtitles + branding + end card (the tour-video-finish skill)
+    # The render step produces a silent/near-silent draft. The finish step adds the
+    # 50+ audience essentials: burned subtitles, logo watermark, end card with price
+    # + URL. Uses the proven tour-video-finish scripts (shipped legends-of-china-warriors).
+    # Skipped in mock mode (no real video to finish).
+    if not mock and not simple:
+        # Full research path: finish is a separate manual step (the operator runs it
+        # after reviewing the draft in the gallery). Simple path below handles it inline.
+        pass
+    elif not mock and simple:
+        finish_script = out_dir / "finish_script.json"
+        # Write the script JSON the finish skill expects: [{shot_id, text, start, end}]
+        finish_data = []
+        for shot in edl.edl:
+            finish_data.append({
+                "shot_id": shot.shot_id,
+                "text": shot.subtitle_text or "",
+                "start": shot.timeline_start_sec,
+                "end": shot.timeline_start_sec + shot.duration_sec,
+            })
+        finish_script.write_text(json.dumps(finish_data, indent=2), encoding="utf-8")
+
+        # Resolve the finish skill path
+        finish_py = Path(__file__).parent.parent / ".agents" / "skills" / "tour-video-finish" / "scripts" / "finish.py"
+        vo_concat = out_dir / "vo_track.mp3"
+        final_path = out_dir / "final.mp4"
+
+        if finish_py.exists():
+            import shutil
+            finish_cmd = [
+                sys.executable, str(finish_py),
+                "--draft", str(render.video_path),
+                "--script", str(finish_script),
+                "--out", str(final_path),
+            ]
+            # Pass the already-generated VO so finish doesn't re-run TTS
+            if vo_concat.exists():
+                finish_cmd.extend(["--vo", str(vo_concat)])
+            # Branding from the brief
+            logo = brief.branding.get("logo_url", "") if brief.branding else ""
+            if logo and Path(logo).exists():
+                finish_cmd.extend(["--logo", logo])
+            if brief.cta_text:
+                finish_cmd.extend(["--brand", "ExploreChina Holidays", "--price", brief.cta_text])
+            if brief.cta_url:
+                finish_cmd.extend(["--url", brief.cta_url])
+
+            logger.info("produce() finishing: subtitles + branding + end card")
+            result_finish = subprocess.run(finish_cmd, capture_output=True, text=True, timeout=300)
+            if result_finish.returncode == 0 and final_path.exists():
+                render = RenderResult(
+                    video_path=str(final_path),
+                    duration_sec=edl.total_duration_sec,
+                )
+                logger.info("produce() finished: %s", final_path)
+            else:
+                logger.warning("produce() finish step failed: %s — using draft", result_finish.stderr[:200])
+        else:
+            logger.warning("produce() finish skill not found at %s — skipping subtitles/branding", finish_py)
+
+    # 11. QA (H5 — three-layer gate)
     result = ProduceResult(
         tour_slug=brief.tour_slug,
         status="mock" if mock else "delivered",

@@ -1,0 +1,29 @@
+# Local Development Bridge — configuration.
+#
+# Models are one-line swaps. The Phase-1 proof uses ONE model for both roles;
+# the critic's *blindness* (separate call, draft never in its context) — not a
+# different model family — carries the anti-anchoring weight. Swapping the
+# critic to a different family later (v3 OQ-C) needs only one line here.
+#
+# See docs/internal/local-bridge-model-audit.md for the selection rationale.
+
+[models]
+# Both roles use the same model in Phase 1 (cowork audit recommendation).
+generator = "qwen3.6:27b"
+critic    = "qwen3.6:27b"
+
+[ollama]
+# OpenAI-compatible endpoint; localhost, no auth.
+base_url  = "http://localhost:11434"
+timeout_s = 180
+
+[generation]
+temperature    = 0.2   # drafts: low-temp, deterministic-ish
+max_tokens     = 4096
+
+[critique]
+temperature    = 0.4   # critique: a little higher so it enumerates failures
+max_tokens     = 4096
+
+[cloud]   # Phase 2 only — synthesizer.py (deferred). Default cloud = DeepSeek.
+provider = "deepseek"
