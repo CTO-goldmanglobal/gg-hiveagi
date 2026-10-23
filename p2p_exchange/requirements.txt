@@ -6,4 +6,4 @@
 cryptography>=42.0
 
 # Testing:
-pytest>=8.0
+pytest>=9.1.1
