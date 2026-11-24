@@ -1,5 +1,12 @@
 # 端-边-云协同架构 v2 (Reconciled) / Edge-Cloud Architecture v2
 
+> ⚠️ **SUPERSEDED (banner added 2026-11-25).** This v2 document was superseded by
+> **`docs/UNIFIED-ARCHITECTURE-v3.md`** (the canonical engineering doc, which explicitly
+> supersedes "the two-system model in EDGE-CLOUD-ARCHITECTURE-v2.md") under
+> **`docs/THE-SEED-DOCTRINE.md`** (first principles — doctrine wins over any architecture
+> doc). Project status: **dormant** (no active build; latest corpus 2026-08). Read v3 + the
+> doctrine first; keep this file for the reconciliation history only.
+
 > **This is a replan of the v1.0 personal-AI-infrastructure doc.** It keeps the
 > best ideas (the 端-边-云 tier model, confidence routing, the **vibe-coding
 > bridge**) and reconciles them with the project's **committed** architecture

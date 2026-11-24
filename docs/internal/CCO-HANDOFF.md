@@ -1,5 +1,10 @@
 # Handoff — Chief Code Operator (CCO)
 
+> ⚠️ **SUPERSEDED as an onboarding brief (banner added 2026-11-25).** No CCO seat is active;
+> the project is **dormant** (no active build; latest corpus 2026-08). The current
+> authorities are **`docs/UNIFIED-ARCHITECTURE-v3.md`** + **`docs/THE-SEED-DOCTRINE.md`**.
+> Its "only doc you must read" claim no longer holds. Historical reference only.
+
 > **You are the Chief Code Operator.** Finn (founder) is bringing you online in a
 > fresh chat to act as his virtual technical head. This document is your
 > onboarding brief. Read it once, fully, before touching anything.

@@ -1,5 +1,11 @@
 # Unified Roadmap — From Seed to Wave
 
+> ⚠️ **SUPERSEDED as the master plan (banner added 2026-11-25).** The authoritative
+> documents are **`docs/UNIFIED-ARCHITECTURE-v3.md`** (canonical engineering) and
+> **`docs/THE-SEED-DOCTRINE.md`** (first principles — doctrine wins). Where this roadmap
+> disagrees with them, they win. Project status: **dormant** (no active build; latest
+> corpus 2026-08).
+
 > Every circle, every phase, every dependency — in one document.
 > This is the master plan. Everything else is detail.
 

@@ -1,5 +1,11 @@
 # Cursor Handoff — Video Automation Pipeline
 
+> ⚠️ **SUPERSEDED as a "read this first" handoff (banner added 2026-11-25).** The current
+> authorities are **`docs/UNIFIED-ARCHITECTURE-v3.md`** + **`docs/THE-SEED-DOCTRINE.md`**.
+> This handoff describes a video-automation build-out from the July-2026 era and its "read
+> this first" claim no longer holds. Project status: **dormant** (no active build; latest
+> corpus 2026-08). Historical reference only.
+
 > **The single document for Cursor + GLM-5.2 to build the one-command video
 > pipeline.** Everything from the cold-start overview, the retrospectives, the
 > three external audits (OpenAI, Claude, DeepSeek), and the skill research —

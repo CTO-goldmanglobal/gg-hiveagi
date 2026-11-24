@@ -1,5 +1,11 @@
 # VIDEO-PIPELINE-BUILD-PLAN.md
 
+> ⚠️ **STATUS LINE STALE — superseded banner added 2026-11-25.** "No production code written
+> yet" is outdated: the produce-pipeline burst landed and merged to main on **2026-08-06**
+> (H2 URL→brief ingestion, generate_script narration, H5 three-layer QA gate, pool→clip
+> selector — see `wiki/goldmanglobal/decision-timeline.md`). The project is **dormant**; the
+> current authorities are `docs/UNIFIED-ARCHITECTURE-v3.md` + `docs/THE-SEED-DOCTRINE.md`.
+
 > **Status:** Build plan for the HiveAGI seat. No production code written yet.
 > **Companion to:** `docs/CURSOR-HANDOFF.md` (the retrospective + bug rules) and the ECH-side
 > `VIDEO-AUTOMATION-AUDIT.md` v2 (the two-repo split + seam contracts).
